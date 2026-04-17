@@ -1,4 +1,4 @@
-# Ink port to Odin
+# Odin port of Ink
 
 ## API
 
