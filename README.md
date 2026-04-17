@@ -18,8 +18,8 @@ story.choose_choice_index(0);
 
 ## TODO
 
-- [] text
-- [] text
-- [] text
-- [] text
-- [] text
+- [ ] ?
+- [ ] ?
+- [ ] ?
+- [ ] ?
+- [ ] ?
