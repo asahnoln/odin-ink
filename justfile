@@ -1,4 +1,5 @@
 alias t := test
+alias wt := watch-test
 alias b := build
 alias r := run
 
@@ -14,3 +15,5 @@ build: test
 run input: test
   odin run {{cmd}} {{collection}} -- {{input}}
 
+watch-test:
+  watchexec -w src -w tests -c -- just --justfile={{justfile()}} test

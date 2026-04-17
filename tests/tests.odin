@@ -1,3 +1,3 @@
 package tests
 
-@(require) import "game"
+@(require) import "ink"

@@ -6,12 +6,14 @@
       "path": "./src"
     }
   ],
-  "enable_document_symbols": true,
   "enable_semantic_tokens": true,
+  "enable_document_symbols": true,
   "enable_hover": true,
   "enable_procedure_context": false,
-  "enable_procedure_snippet": true,
   "enable_snippets": true,
-  "enable_references": true,
-  "enable_fake_methods": false
+  "enable_overload_resolution": true,
+  "enable_fake_methods": true,
+  "enable_comp_lit_signature_help": true,
+  "enable_comp_lit_signature_help_use_docs": true,
+  "enable_code_action_invert_if": true
 }
