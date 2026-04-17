@@ -20,4 +20,5 @@ ink.choose_choice_index(&story, 0);
 
 ## TODO
 
-- [ ] Figure out how the TODO
+- [ ] Figure out story structure in code
+- [ ] Parse choices
