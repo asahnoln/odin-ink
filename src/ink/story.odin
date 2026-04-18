@@ -1,5 +1,8 @@
 package ink
 
+import "core:encoding/json"
+import "core:strings"
+
 Element :: union {
 	Container,
 	string,
@@ -10,15 +13,37 @@ Container :: []Element
 Story :: struct {
 	can_continue: bool,
 	// current_index: int,
-	// root:          Container,
+	root:         Container,
 }
 
-story_make :: proc(json_text: []u8) -> Story {
-	return Story{can_continue = true}
+// TODO: Continue refactor
+story_make :: proc(
+	json_text: []u8,
+	allocator := context.allocator,
+) -> (
+	s: Story,
+	err: json.Unmarshal_Error,
+) {
+	v := json.parse(json_text, allocator = allocator) or_return
+	defer json.destroy_value(v)
+
+	s.can_continue = true
+	s.root = make(Container, 1)
+
+	b := strings.builder_make(allocator)
+	defer strings.builder_destroy(&b)
+	strings.write_string(
+		&b,
+		v.(json.Object)["root"].(json.Array)[0].(json.Array)[0].(json.String)[1:],
+	)
+	strings.write_string(&b, v.(json.Object)["root"].(json.Array)[0].(json.Array)[1].(json.String))
+	s.root[0] = strings.to_string(b)
+
+	return s, nil
 }
 
 story_continue :: proc(s: ^Story) -> string {
-	return "Once upon a time...\n"
+	return s.root[0].(string)
 }
 
 
