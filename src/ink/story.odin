@@ -1,6 +1,5 @@
 package ink
 
-import "core:strings"
 Element :: union {
 	Container,
 	string,
@@ -9,25 +8,42 @@ Element :: union {
 Container :: []Element
 
 Story :: struct {
-	root: Container,
+	can_continue: bool,
+	// current_index: int,
+	// root:          Container,
+}
+
+story_make :: proc(json_text: []u8) -> Story {
+	return Story{can_continue = true}
 }
 
 story_continue :: proc(s: ^Story) -> string {
-	b, _ := strings.builder_make()
-	defer strings.builder_destroy(&b)
-
-	parse_container(s.root, &b)
-
-	return strings.to_string(b)
+	return "Once upon a time...\n"
 }
 
-parse_container :: proc(c: Container, b: ^strings.Builder) {
-	for e in c {
-		switch t in e {
-		case Container:
-			parse_container(t, b)
-		case string:
-			strings.write_string(b, t)
-		}
-	}
-}
+
+// story_continue :: proc(s: ^Story) -> (r: string) {
+// 	for e, i in s.root[s.current_index:] {
+// 		#partial switch v in e {
+// 		case string:
+// 			s.current_index = i + 1
+// 			return v
+// 		}
+// 	}
+//
+// 	return ""
+// 	// return parse_container(s.root)
+// }
+
+// parse_container :: proc(c: Container) -> string {
+// 	for e in c {
+// 		switch t in e {
+// 		case Container:
+// 			return parse_container(t)
+// 		case string:
+// 			return t
+// 		}
+// 	}
+//
+// 	return ""
+// }

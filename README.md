@@ -22,3 +22,7 @@ ink.choose_choice_index(&story, 0);
 
 - [ ] Figure out story structure in code
 - [ ] Parse choices
+
+## Technical details
+
+- Text lines should be optimized: "^line" and next "\n" concatenated
