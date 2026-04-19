@@ -1,75 +1,28 @@
 package ink_test
 
-import "core:log"
 import "core:testing"
 import "src:ink"
 
 @(test)
-example :: proc(t: ^testing.T) {
-	json_text := #load("testdata/example.json")
-	story, err := ink.story_make(json_text)
-	defer delete(story.root)
-	if !testing.expect_value(t, err, nil) {
-		return
-	}
+apply_elem_cmd_ev :: proc(t: ^testing.T) {
+	s := ink.story_make()
+	defer ink.story_destroy(&s)
 
-	testing.expect_value(t, story.can_continue, true)
+	ink.apply_elem(&s, .Ev)
+	testing.expect_value(t, s.mode, ink.Mode.Evaluation)
 
-	l := ink.story_continue(&story)
-	testing.expect_value(t, l, "Once upon a time...\n")
-
-	testing.expect_value(t, story.can_continue, false)
-	// testing.expect_value(t, len(s.current_choices), 2)
-	// testing.expect_value(t, s.current_choices[0].text, "There were two choices.")
-	//
-	// ink.choose_choice_index(0)
-	//
-	// testing.expect_value(t, story.can_continue, true)
-	//
-	// l = ink.story_continue(&s)
-	// testing.expect_value(t, s, "There were two choices.")
-	//
-	// testing.expect_value(t, story.can_continue, true)
-	//
-	// l = ink.story_continue(&s)
-	// testing.expect_value(t, s, "They lived happily ever after.")
-	//
-	// testing.expect_value(t, story.can_continue, false)
-	// testing.expect_value(t, len(s.current_choices), 0)
+	ink.apply_elem(&s, .EvEnd)
+	testing.expect_value(t, s.mode, ink.Mode.Default)
 }
 
-// story_make :: proc(t: ^testing.T) {
-// 	json_text := #load("testdata/example.json")
-// 	story, err := ink.story_make(json_text)
-// 	if !testing.expect_value(t, err, nil) {
-// 		return
-// 	}
-//
-// 	testing.expect_value(t, story.data.ink_version, 21)
-// }
+@(test)
+apply_elem_cmd_str :: proc(t: ^testing.T) {
+	s := ink.story_make()
+	defer ink.story_destroy(&s)
 
-// story_continue :: proc(t: ^testing.T) {
-// 	story := ink.Story {
-// 		root = {
-// 			"First line of text.\n",
-// 			"Second line of text.\n",
-// 			"Second line of text.\n",
-// 			// ink.Container { 	//
-// 			// "Second line of text.\n",
-// 			// },
-// 		},
-// 	}
-//
-// 	s := ink.story_continue(&story)
-// 	testing.expect_value(t, s, "First line of text.\n")
-//
-// 	s = ink.story_continue(&story)
-// 	testing.expect_value(t, s, "Second line of text.\n")
-//
-// 	s = ink.story_continue(&story)
-// 	testing.expect_value(t, s, "Second line of text.\n")
-// }
+	ink.apply_elem(&s, .Str)
+	testing.expect_value(t, s.mode, ink.Mode.Content)
 
-// choices :: proc(t: ^testing.T) {
-// 	testing.expectf(t, 1 == 2, "work on choices")
-// }
+	ink.apply_elem(&s, .StrEnd)
+	testing.expect_value(t, s.mode, ink.Mode.Evaluation)
+}
