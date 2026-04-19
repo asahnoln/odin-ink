@@ -26,3 +26,13 @@ apply_elem_cmd_str :: proc(t: ^testing.T) {
 	ink.apply_elem(&s, .StrEnd)
 	testing.expect_value(t, s.mode, ink.Mode.Evaluation)
 }
+
+@(test)
+apply_elem_func :: proc(t: ^testing.T) {
+	s := ink.story_make()
+	s.ev_stack = {2, 1}
+	defer ink.story_destroy(&s)
+
+	ink.apply_elem(&s, .Plus)
+	testing.expect_value(t, s.ev_stack, {3})
+}
