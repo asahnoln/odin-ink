@@ -1,5 +1,14 @@
 package ink
 
+Apply_Elem_Err :: union {
+	Apply_Func_Err,
+}
+
+Apply_Func_Err :: struct {
+	func: Func,
+	x, y: Stack_Element,
+}
+
 Mode :: enum {
 	Default,
 	Evaluation,
@@ -13,8 +22,18 @@ Cmd :: enum {
 	StrEnd,
 }
 
+Func :: enum {
+	Plus,
+}
+
+Stack_Element :: union {
+	f64,
+	string,
+}
+
 Story :: struct {
-	mode: Mode,
+	mode:     Mode,
+	ev_stack: [dynamic]Stack_Element,
 }
 
 story_make :: proc() -> Story {
@@ -22,9 +41,15 @@ story_make :: proc() -> Story {
 }
 
 story_destroy :: proc(s: ^Story) {
+	delete(s.ev_stack)
 }
 
-apply_elem :: proc(s: ^Story, c: Cmd) {
+apply_elem :: proc {
+	apply_elem_cmd,
+	apply_elem_func,
+}
+
+apply_elem_cmd :: proc(s: ^Story, c: Cmd) {
 	switch c {
 	case .Ev:
 		s.mode = .Evaluation
@@ -35,4 +60,29 @@ apply_elem :: proc(s: ^Story, c: Cmd) {
 	case .StrEnd:
 		s.mode = .Evaluation
 	}
+}
+
+apply_elem_func :: proc(s: ^Story, f: Func) -> Apply_Elem_Err {
+	x := ev_stack_pop_f64(&s.ev_stack) or_return
+	y := ev_stack_pop_f64(&s.ev_stack) or_return
+
+	append(&s.ev_stack, x + y)
+
+	return nil
+}
+
+
+ev_stack_pop_f64 :: proc(st: ^[dynamic]Stack_Element) -> (x: f64, err: Apply_Elem_Err) {
+	el := pop(st)
+
+	ok: bool
+	x, ok = el.(f64)
+	if !ok {
+		err = Apply_Func_Err {
+			func = .Plus,
+			x    = el,
+		}
+	}
+
+	return
 }
