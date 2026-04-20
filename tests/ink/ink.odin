@@ -60,3 +60,9 @@ apply_elem_str :: proc(t: ^testing.T) {
 	ink.apply_elem(&s, "\n")
 	testing.expect_value(t, s.current_text, "Text\n")
 }
+
+@(test)
+convert_json_to_str :: proc(t: ^testing.T) {
+	res := ink.convert_json(cast(json.String)"^Conversion!")
+	testing.expect_value(t, res, "Conversion!")
+}
