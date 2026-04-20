@@ -20,8 +20,9 @@ ink.choose_choice_index(&story, 0);
 
 ## TODO
 
-- [ ] Figure out story structure in code
-- [ ] Parse choices
+- [ ] Parse JSON into internal story structure with own types
+- [ ] Apply choice elements to story from its stack
+- [ ] story_continue goes through story and builds current_text and current_choices
 
 ## Technical details
 

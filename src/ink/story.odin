@@ -1,5 +1,6 @@
 package ink
 
+import "core:strings"
 Apply_Elem_Err :: union {
 	Apply_Func_Err,
 }
@@ -32,25 +33,37 @@ Stack_Element :: union {
 }
 
 Story :: struct {
-	mode:     Mode,
-	ev_stack: [dynamic]Stack_Element,
+	mode:         Mode,
+	ev_stack:     [dynamic]Stack_Element,
+	current_text: string,
+	builder:      strings.Builder,
 }
 
 story_make :: proc() -> Story {
-	return Story{}
+	return Story{builder = strings.builder_make()}
 }
 
 story_destroy :: proc(s: ^Story) {
 	delete(s.ev_stack)
+	strings.builder_destroy(&s.builder)
 }
 
 apply_elem :: proc {
 	apply_elem_cmd,
 	apply_elem_func,
+	apply_elem_str,
 }
 
-apply_elem_cmd :: proc(s: ^Story, c: Cmd) {
-	switch c {
+apply_elem_str :: proc(s: ^Story, el: string) {
+	strings.write_string(&s.builder, s.current_text)
+	strings.write_string(&s.builder, el)
+	s.current_text = strings.to_string(s.builder)
+
+	strings.builder_reset(&s.builder)
+}
+
+apply_elem_cmd :: proc(s: ^Story, el: Cmd) {
+	switch el {
 	case .Ev:
 		s.mode = .Evaluation
 	case .EvEnd:
@@ -62,7 +75,7 @@ apply_elem_cmd :: proc(s: ^Story, c: Cmd) {
 	}
 }
 
-apply_elem_func :: proc(s: ^Story, f: Func) -> Apply_Elem_Err {
+apply_elem_func :: proc(s: ^Story, el: Func) -> Apply_Elem_Err {
 	x := ev_stack_pop_f64(&s.ev_stack) or_return
 	y := ev_stack_pop_f64(&s.ev_stack) or_return
 
