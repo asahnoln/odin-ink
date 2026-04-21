@@ -13,6 +13,15 @@ convert_json_to_str :: proc(t: ^testing.T) {
 }
 
 @(test)
+convert_json_to_cmd :: proc(t: ^testing.T) {
+	// TODO: Table tests
+	res := ink.convert_json(cast(json.String)"ev")
+	defer ink.destroy_element(res)
+
+	testing.expect_value(t, res.(ink.Cmd), ink.Cmd.Ev)
+}
+
+@(test)
 convert_json_to_f64 :: proc(t: ^testing.T) {
 	res := ink.convert_json(cast(json.Integer)5)
 	defer ink.destroy_element(res)
