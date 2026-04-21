@@ -1,6 +1,15 @@
 package ink
 
 import "core:strings"
+
+Element :: union {
+	string,
+	f64,
+	bool,
+	[]Element,
+	map[string]Element,
+}
+
 Apply_Elem_Err :: union {
 	Apply_Func_Err,
 }
