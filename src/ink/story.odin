@@ -3,6 +3,7 @@ package ink
 import "core:strings"
 
 Element :: union {
+	Cmd,
 	string,
 	f64,
 	bool,
