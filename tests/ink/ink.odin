@@ -27,6 +27,15 @@ apply_elem_cmd_str :: proc(t: ^testing.T) {
 }
 
 @(test)
+apply_elem_cmd_done :: proc(t: ^testing.T) {
+	s := ink.story_make()
+	defer ink.story_destroy(&s)
+
+	ink.apply_elem(&s, ink.Cmd.Done)
+	testing.expect(t, s.mode == .Done)
+}
+
+@(test)
 apply_elem_func :: proc(t: ^testing.T) {
 	s := ink.story_make()
 	append(&s.ev_stack, 2, 1.25)

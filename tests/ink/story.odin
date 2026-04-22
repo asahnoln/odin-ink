@@ -3,7 +3,6 @@ package ink_test
 import "core:testing"
 import "src:ink"
 
-// TODO: Understand where bad frees coming from
 @(test)
 make_story_from_json :: proc(t: ^testing.T) {
 	s, err := ink.story_make(#load("testdata/one_line_of_text.json"))
@@ -17,8 +16,4 @@ make_story_from_json :: proc(t: ^testing.T) {
 		s.root.([]ink.Element)[0].([]ink.Element)[0].(string),
 		"One line of text.",
 	)
-}
-
-story_continue :: proc() {
-
 }

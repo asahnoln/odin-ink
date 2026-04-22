@@ -25,6 +25,7 @@ Mode :: enum {
 	Default,
 	Evaluation,
 	Content,
+	Done,
 }
 
 Cmd :: enum {
@@ -70,7 +71,7 @@ story_make_empty :: proc(allocator := context.allocator) -> Story {
 }
 
 story_make_from_json :: proc(
-	json_data: []u8,
+	json_data: []byte,
 	allocator := context.allocator,
 ) -> (
 	s: Story,
@@ -115,7 +116,7 @@ apply_elem_cmd :: proc(s: ^Story, el: Cmd) {
 	case .StrEnd:
 		s.mode = .Evaluation
 	case .Done:
-	// TODO: Handle DONE
+		s.mode = .Done
 	}
 }
 
