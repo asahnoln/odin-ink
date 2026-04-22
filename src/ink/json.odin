@@ -120,7 +120,11 @@ parse_obj_into_elem :: proc(
 		return DivertValue{path = strings.clone(path, allocator)}, nil
 	}
 	if path, ok := obj["->"].(string); ok {
-		return Divert{path = strings.clone(path, allocator)}, nil
+		return Divert {
+				path = strings.clone(path, allocator),
+				var = obj["var"].(bool) or_else false,
+			},
+			nil
 	}
 	if name, ok := obj["temp="].(string); ok {
 		return VarAssignTemp{name = strings.clone(name, allocator)}, nil

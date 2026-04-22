@@ -36,6 +36,7 @@ DivertValue :: struct {
 // Divert to some path
 Divert :: struct {
 	path: string,
+	var:  bool,
 }
 
 // A temp variable which takes value from evaluation stack

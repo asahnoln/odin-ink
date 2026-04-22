@@ -131,7 +131,7 @@ convert_json_divert_value :: proc(t: ^testing.T) {
 convert_json_divert :: proc(t: ^testing.T) {
 	o := make(json.Object)
 	defer delete(o)
-	o["->"] = "some.other.path"
+	o["->"] = "some.path"
 
 	got, err := ink.convert_json(o)
 	if !testing.expect_value(t, err, nil) {
@@ -139,7 +139,23 @@ convert_json_divert :: proc(t: ^testing.T) {
 	}
 	defer ink.destroy_element(got)
 
-	testing.expect_value(t, got.(ink.Divert), ink.Divert{path = "some.other.path"})
+	testing.expect_value(t, got.(ink.Divert), ink.Divert{path = "some.path"})
+}
+
+@(test)
+convert_json_divert_to_var :: proc(t: ^testing.T) {
+	o := make(json.Object)
+	defer delete(o)
+	o["->"] = "varName"
+	o["var"] = true
+
+	got, err := ink.convert_json(o)
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+	defer ink.destroy_element(got)
+
+	testing.expect_value(t, got.(ink.Divert), ink.Divert{path = "varName", var = true})
 }
 
 @(test)
