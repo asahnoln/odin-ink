@@ -105,9 +105,9 @@ convert_json_to_object :: proc(t: ^testing.T) {
 	if !testing.expect_value(t, err, nil) {
 		return
 	}
-	got := res.(map[string]ink.Element)
 	defer ink.destroy_element(res)
 
+	got := res.(map[string]ink.Element)
 	testing.expect_value(t, got["wow"].(f64), 6)
 	testing.expect_value(t, got["hey"].(string), "lol")
 }
@@ -118,12 +118,41 @@ convert_json_divert_value :: proc(t: ^testing.T) {
 	defer delete(o)
 	o["^->"] = "path.to.smth"
 
+	got, err := ink.convert_json(o)
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+	defer ink.destroy_element(got)
+
+	testing.expect_value(t, got.(ink.DivertValue), ink.DivertValue{path = "path.to.smth"})
+}
+
+@(test)
+convert_json_divert :: proc(t: ^testing.T) {
+	o := make(json.Object)
+	defer delete(o)
+	o["->"] = "some.other.path"
+
+	got, err := ink.convert_json(o)
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+	defer ink.destroy_element(got)
+
+	testing.expect_value(t, got.(ink.Divert), ink.Divert{path = "some.other.path"})
+}
+
+@(test)
+convert_json_assign_temp :: proc(t: ^testing.T) {
+	o := make(json.Object)
+	defer delete(o)
+	o["temp="] = "varName"
+
 	res, err := ink.convert_json(o)
 	if !testing.expect_value(t, err, nil) {
 		return
 	}
-	got := res.(ink.DivertValue)
 	defer ink.destroy_element(res)
 
-	testing.expect_value(t, got, ink.DivertValue{"path.to.smth"})
+	testing.expect_value(t, res.(ink.VarAssignTemp), ink.VarAssignTemp{name = "varName"})
 }

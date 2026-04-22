@@ -19,11 +19,21 @@ Element :: union {
 	bool,
 	[]Element,
 	map[string]Element,
+	Divert,
 	DivertValue,
+	VarAssignTemp,
 }
 
 DivertValue :: struct {
 	path: string,
+}
+
+Divert :: struct {
+	path: string,
+}
+
+VarAssignTemp :: struct {
+	name: string,
 }
 
 Mode :: enum {
