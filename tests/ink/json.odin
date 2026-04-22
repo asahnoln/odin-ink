@@ -172,3 +172,19 @@ convert_json_assign_temp :: proc(t: ^testing.T) {
 
 	testing.expect_value(t, res.(ink.VarAssignTemp), ink.VarAssignTemp{name = "varName"})
 }
+
+@(test)
+convert_json_choice :: proc(t: ^testing.T) {
+	o := make(json.Object)
+	defer delete(o)
+	o["*"] = "path.to.choice"
+	o["flg"] = 18
+
+	res, err := ink.convert_json(o)
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+	defer ink.destroy_element(res)
+
+	testing.expect_value(t, res.(ink.Choice), ink.Choice{path = "path.to.choice", flag = 18})
+}
