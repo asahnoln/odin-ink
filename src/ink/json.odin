@@ -12,25 +12,25 @@ Unknown_Cmd_Error :: struct {
 }
 
 convert_json :: proc(j: json.Value) -> (e: Element, err: JSON_Conversion_Error) {
-	switch v in j {
+	switch val in j {
 	case json.String:
-		return parse_str_into_elem(v)
+		return parse_str_into_elem(val)
 	case json.Integer:
-		return cast(f64)v, nil
+		return cast(f64)val, nil
 	case json.Float:
-		return v, nil
+		return val, nil
 	case json.Boolean:
-		return v, nil
+		return val, nil
 	case json.Object:
-		res := make(map[string]Element, len(v))
-		for k, e in v {
-			res[k] = convert_json(e) or_return
+		res := make(map[string]Element, len(val))
+		for k, v in val {
+			res[k] = convert_json(v) or_return
 		}
 		return res, nil
 	case json.Array:
-		res := make([]Element, len(v))
-		for e, i in v {
-			res[i] = convert_json(e) or_return
+		res := make([]Element, len(val))
+		for v, i in val {
+			res[i] = convert_json(v) or_return
 		}
 		return res, nil
 	case json.Null:
@@ -58,22 +58,24 @@ destroy_element :: proc(e: Element) {
 	}
 }
 
-parse_str_into_elem :: proc(v: string) -> (e: Element, err: JSON_Conversion_Error) {
-	if len(v) > 0 && v[0] == '^' {
-		return strings.clone(v[1:]), nil
+parse_str_into_elem :: proc(s: string) -> (e: Element, err: JSON_Conversion_Error) {
+	if len(s) > 0 && s[0] == '^' {
+		e = strings.clone(s[1:])
+		return
 	}
 
-	switch v {
+	switch s {
 	case "ev":
-		return .Ev, nil
+		e = .Ev
 	case "/ev":
-		return .EvEnd, nil
+		e = .EvEnd
 	case "str":
-		return .Str, nil
+		e = .Str
 	case "/str":
-		return .StrEnd, nil
+		e = .StrEnd
 	case:
-		return nil, Unknown_Cmd_Error{v}
+		err = Unknown_Cmd_Error{s}
 	}
 
+	return
 }
