@@ -45,7 +45,7 @@ apply_elem_func_err :: proc(t: ^testing.T) {
 	defer ink.story_destroy(&s)
 
 	err := ink.apply_elem(&s, ink.Func.Plus)
-	testing.expect_value(t, err, ink.Apply_Func_Err{func = .Plus, x = "NO"})
+	testing.expect_value(t, err, ink.Apply_Func_Error{func = .Plus, x = "NO"})
 }
 
 @(test)

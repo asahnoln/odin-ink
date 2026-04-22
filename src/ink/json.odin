@@ -24,7 +24,11 @@ convert_json :: proc(j: json.Value) -> (e: Element, err: JSON_Conversion_Error) 
 	case json.Object:
 		res := make(map[string]Element, len(val))
 		for k, v in val {
-			res[k] = convert_json(v) or_return
+			if s, ok := v.(string); ok {
+				res[k] = s
+			} else {
+				res[k] = convert_json(v) or_return
+			}
 		}
 		return res, nil
 	case json.Array:
@@ -64,6 +68,11 @@ parse_str_into_elem :: proc(s: string) -> (e: Element, err: JSON_Conversion_Erro
 		return
 	}
 
+	if s == "\n" {
+		e = strings.clone(s)
+		return
+	}
+
 	switch s {
 	case "ev":
 		e = .Ev
@@ -73,6 +82,8 @@ parse_str_into_elem :: proc(s: string) -> (e: Element, err: JSON_Conversion_Erro
 		e = .Str
 	case "/str":
 		e = .StrEnd
+	case "done":
+		e = .Done
 	case:
 		err = Unknown_Cmd_Error{s}
 	}

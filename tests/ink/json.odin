@@ -17,6 +17,17 @@ convert_json_to_str :: proc(t: ^testing.T) {
 }
 
 @(test)
+convert_json_newline_to_str :: proc(t: ^testing.T) {
+	res, err := ink.convert_json(cast(json.String)"\n")
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+	defer ink.destroy_element(res)
+
+	testing.expect_value(t, res.(string), "\n")
+}
+
+@(test)
 convert_json_to_cmd :: proc(t: ^testing.T) {
 	tests := []struct {
 		str:  string,
@@ -26,6 +37,7 @@ convert_json_to_cmd :: proc(t: ^testing.T) {
 		{"/ev", .EvEnd},
 		{"str", .Str},
 		{"/str", .StrEnd},
+		{"done", .Done},
 	}
 
 	for tt in tests {
@@ -86,7 +98,8 @@ convert_json_to_array :: proc(t: ^testing.T) {
 convert_json_to_object :: proc(t: ^testing.T) {
 	o := make(json.Object)
 	defer delete(o)
-	o["hey"] = 1
+	o["hey"] = "lol"
+	o["wow"] = 6
 
 	res, err := ink.convert_json(o)
 	if !testing.expect_value(t, err, nil) {
@@ -95,5 +108,6 @@ convert_json_to_object :: proc(t: ^testing.T) {
 	got := res.(map[string]ink.Element)
 	defer ink.destroy_element(res)
 
-	testing.expect_value(t, got["hey"].(f64), 1)
+	testing.expect_value(t, got["wow"].(f64), 6)
+	testing.expect_value(t, got["hey"].(string), "lol")
 }

@@ -1,5 +1,6 @@
 package ink
 
+import "core:encoding/json"
 import "core:strings"
 
 Element :: union {
@@ -11,11 +12,11 @@ Element :: union {
 	map[string]Element,
 }
 
-Apply_Elem_Err :: union {
-	Apply_Func_Err,
+Apply_Elem_Error :: union {
+	Apply_Func_Error,
 }
 
-Apply_Func_Err :: struct {
+Apply_Func_Error :: struct {
 	func: Func,
 	x, y: Stack_Element,
 }
@@ -31,6 +32,7 @@ Cmd :: enum {
 	EvEnd,
 	Str,
 	StrEnd,
+	Done,
 }
 
 Func :: enum {
@@ -47,15 +49,36 @@ Story :: struct {
 	ev_stack:     [dynamic]Stack_Element,
 	current_text: string,
 	builder:      strings.Builder,
+	root:         Element,
 }
 
-story_make :: proc() -> Story {
-	return Story{builder = strings.builder_make()}
+Story_Make_Error :: union {
+	json.Error,
+	JSON_Conversion_Error,
+}
+
+story_make :: proc {
+	story_make_empty,
+	story_make_from_json,
+}
+
+story_make_empty :: proc() -> Story {
+	return Story{builder = strings.builder_make(), ev_stack = make([dynamic]Stack_Element)}
+}
+
+story_make_from_json :: proc(json_data: []u8) -> (s: Story, err: Story_Make_Error) {
+	j := json.parse(json_data) or_return
+	defer json.destroy_value(j)
+
+	s = story_make()
+	s.root = convert_json(j.(json.Object)["root"]) or_return
+	return
 }
 
 story_destroy :: proc(s: ^Story) {
 	delete(s.ev_stack)
 	strings.builder_destroy(&s.builder)
+	destroy_element(s.root)
 }
 
 apply_elem :: proc {
@@ -82,10 +105,12 @@ apply_elem_cmd :: proc(s: ^Story, el: Cmd) {
 		s.mode = .Content
 	case .StrEnd:
 		s.mode = .Evaluation
+	case .Done:
+	// TODO: Handle DONE
 	}
 }
 
-apply_elem_func :: proc(s: ^Story, el: Func) -> Apply_Elem_Err {
+apply_elem_func :: proc(s: ^Story, el: Func) -> Apply_Elem_Error {
 	x := ev_stack_pop_f64(&s.ev_stack) or_return
 	y := ev_stack_pop_f64(&s.ev_stack) or_return
 
@@ -95,13 +120,13 @@ apply_elem_func :: proc(s: ^Story, el: Func) -> Apply_Elem_Err {
 }
 
 
-ev_stack_pop_f64 :: proc(st: ^[dynamic]Stack_Element) -> (x: f64, err: Apply_Elem_Err) {
+ev_stack_pop_f64 :: proc(st: ^[dynamic]Stack_Element) -> (x: f64, err: Apply_Elem_Error) {
 	el := pop(st)
 
 	ok: bool
 	x, ok = el.(f64)
 	if !ok {
-		err = Apply_Func_Err {
+		err = Apply_Func_Error {
 			func = .Plus,
 			x    = el,
 		}
