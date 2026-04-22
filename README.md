@@ -20,6 +20,8 @@ ink.choose_choice_index(&story, 0);
 
 ## TODO
 
+- [ ] Make allocators compliant to odin style
+- [ ] Parse different objects into different types (not just `map[string]Element`)
 - [ ] Parse JSON into internal story structure with own types
 - [ ] Apply choice elements to story from its stack
 - [ ] story_continue goes through story and builds current_text and current_choices

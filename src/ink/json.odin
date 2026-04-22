@@ -11,10 +11,16 @@ Unknown_Cmd_Error :: struct {
 	v: string,
 }
 
-convert_json :: proc(j: json.Value) -> (e: Element, err: JSON_Conversion_Error) {
+convert_json :: proc(
+	j: json.Value,
+	allocator := context.allocator,
+) -> (
+	e: Element,
+	err: JSON_Conversion_Error,
+) {
 	switch val in j {
 	case json.String:
-		return parse_str_into_elem(val)
+		return parse_str_into_elem(val, allocator)
 	case json.Integer:
 		return cast(f64)val, nil
 	case json.Float:
@@ -22,19 +28,19 @@ convert_json :: proc(j: json.Value) -> (e: Element, err: JSON_Conversion_Error) 
 	case json.Boolean:
 		return val, nil
 	case json.Object:
-		res := make(map[string]Element, len(val))
+		res := make(map[string]Element, len(val), allocator)
 		for k, v in val {
 			if s, ok := v.(string); ok {
-				res[k] = s
+				res[k] = strings.clone(s, allocator)
 			} else {
-				res[k] = convert_json(v) or_return
+				res[k] = convert_json(v, allocator) or_return
 			}
 		}
 		return res, nil
 	case json.Array:
-		res := make([]Element, len(val))
+		res := make([]Element, len(val), allocator)
 		for v, i in val {
-			res[i] = convert_json(v) or_return
+			res[i] = convert_json(v, allocator) or_return
 		}
 		return res, nil
 	case json.Null:
@@ -44,33 +50,36 @@ convert_json :: proc(j: json.Value) -> (e: Element, err: JSON_Conversion_Error) 
 	return nil, nil
 }
 
-destroy_element :: proc(e: Element) {
+destroy_element :: proc(e: Element, allocator := context.allocator) {
 	switch v in e {
 	case []Element:
 		for x in v {
-			destroy_element(x)
+			destroy_element(x, allocator)
 		}
-		delete(v)
+		delete(v, allocator)
 	case map[string]Element:
 		for _, x in v {
-			destroy_element(x)
+			destroy_element(x, allocator)
 		}
 		delete(v)
 	case string:
-		delete(v)
+		delete(v, allocator)
 	case bool, f64, Cmd:
 	}
 }
 
-parse_str_into_elem :: proc(s: string) -> (e: Element, err: JSON_Conversion_Error) {
-	if len(s) > 0 && s[0] == '^' {
-		e = strings.clone(s[1:])
-		return
-	}
-
-	if s == "\n" {
-		e = strings.clone(s)
-		return
+parse_str_into_elem :: proc(
+	s: string,
+	allocator := context.allocator,
+) -> (
+	e: Element,
+	err: JSON_Conversion_Error,
+) {
+	switch {
+	case s == "\n":
+		return strings.clone(s, allocator), err
+	case len(s) > 0 && s[0] == '^':
+		return strings.clone(s[1:], allocator), err
 	}
 
 	switch s {
@@ -88,5 +97,5 @@ parse_str_into_elem :: proc(s: string) -> (e: Element, err: JSON_Conversion_Erro
 		err = Unknown_Cmd_Error{s}
 	}
 
-	return
+	return e, err
 }
