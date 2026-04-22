@@ -3,14 +3,17 @@ package ink
 import "core:encoding/json"
 import "core:strings"
 
+// JSON_Conversion_Error happens on JSON conversion
 JSON_Conversion_Error :: union {
 	Unknown_Cmd_Error,
 }
 
+// Unknown_Cmd_Error states that an unknown command was met and it's undefined what to convert into
 Unknown_Cmd_Error :: struct {
 	v: string,
 }
 
+// Converts give json Value into Story Element
 convert_json :: proc(
 	j: json.Value,
 	allocator := context.allocator,
@@ -42,6 +45,7 @@ convert_json :: proc(
 	return nil, nil
 }
 
+// Deletes allocated strings, slices and maps in Element
 destroy_element :: proc(e: Element, allocator := context.allocator) {
 	switch v in e {
 	case []Element:
@@ -66,6 +70,7 @@ destroy_element :: proc(e: Element, allocator := context.allocator) {
 	}
 }
 
+// Parses received JSON String into proper Element: string or Cmd
 parse_str_into_elem :: proc(
 	s: string,
 	allocator := context.allocator,
@@ -98,6 +103,12 @@ parse_str_into_elem :: proc(
 	return e, err
 }
 
+// Parses give JSON Object into a proper Element:
+//
+// - Divert
+// - DivertValue
+// - VarAssignTemp
+// - General map[string]Element
 parse_obj_into_elem :: proc(
 	obj: json.Object,
 	allocator := context.allocator,
