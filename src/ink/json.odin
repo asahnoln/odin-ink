@@ -28,15 +28,7 @@ convert_json :: proc(
 	case json.Boolean:
 		return val, nil
 	case json.Object:
-		res := make(map[string]Element, len(val), allocator)
-		for k, v in val {
-			if s, ok := v.(string); ok {
-				res[k] = strings.clone(s, allocator)
-			} else {
-				res[k] = convert_json(v, allocator) or_return
-			}
-		}
-		return res, nil
+		return parse_obj_into_elem(val, allocator)
 	case json.Array:
 		res := make([]Element, len(val), allocator)
 		for v, i in val {
@@ -64,6 +56,8 @@ destroy_element :: proc(e: Element, allocator := context.allocator) {
 		delete(v)
 	case string:
 		delete(v, allocator)
+	case DivertValue:
+		destroy_element(v.path)
 	case bool, f64, Cmd:
 	}
 }
@@ -98,4 +92,25 @@ parse_str_into_elem :: proc(
 	}
 
 	return e, err
+}
+
+parse_obj_into_elem :: proc(
+	obj: json.Object,
+	allocator := context.allocator,
+) -> (
+	e: Element,
+	err: JSON_Conversion_Error,
+) {
+	if path, ok := obj["^->"]; ok {
+		return DivertValue{strings.clone(path.(string), allocator)}, nil
+	}
+	res := make(map[string]Element, len(obj), allocator)
+	for k, v in obj {
+		if s, ok := v.(string); ok {
+			res[k] = strings.clone(s, allocator)
+		} else {
+			res[k] = convert_json(v, allocator) or_return
+		}
+	}
+	return res, nil
 }

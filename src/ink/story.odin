@@ -3,15 +3,6 @@ package ink
 import "core:encoding/json"
 import "core:strings"
 
-Element :: union {
-	Cmd,
-	string,
-	f64,
-	bool,
-	[]Element,
-	map[string]Element,
-}
-
 Apply_Elem_Error :: union {
 	Apply_Func_Error,
 }
@@ -19,6 +10,20 @@ Apply_Elem_Error :: union {
 Apply_Func_Error :: struct {
 	func: Func,
 	x, y: Stack_Element,
+}
+
+Element :: union {
+	Cmd,
+	string,
+	f64,
+	bool,
+	[]Element,
+	map[string]Element,
+	DivertValue,
+}
+
+DivertValue :: struct {
+	path: string,
 }
 
 Mode :: enum {

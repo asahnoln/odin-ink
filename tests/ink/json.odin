@@ -111,3 +111,19 @@ convert_json_to_object :: proc(t: ^testing.T) {
 	testing.expect_value(t, got["wow"].(f64), 6)
 	testing.expect_value(t, got["hey"].(string), "lol")
 }
+
+@(test)
+convert_json_divert_value :: proc(t: ^testing.T) {
+	o := make(json.Object)
+	defer delete(o)
+	o["^->"] = "path.to.smth"
+
+	res, err := ink.convert_json(o)
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+	got := res.(ink.DivertValue)
+	defer ink.destroy_element(res)
+
+	testing.expect_value(t, got, ink.DivertValue{"path.to.smth"})
+}
