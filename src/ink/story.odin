@@ -62,23 +62,32 @@ story_make :: proc {
 	story_make_from_json,
 }
 
-story_make_empty :: proc() -> Story {
-	return Story{builder = strings.builder_make(), ev_stack = make([dynamic]Stack_Element)}
+story_make_empty :: proc(allocator := context.allocator) -> Story {
+	return Story {
+		builder = strings.builder_make(allocator),
+		ev_stack = make([dynamic]Stack_Element, allocator),
+	}
 }
 
-story_make_from_json :: proc(json_data: []u8) -> (s: Story, err: Story_Make_Error) {
-	j := json.parse(json_data) or_return
-	defer json.destroy_value(j)
+story_make_from_json :: proc(
+	json_data: []u8,
+	allocator := context.allocator,
+) -> (
+	s: Story,
+	err: Story_Make_Error,
+) {
+	j := json.parse(json_data, allocator = allocator) or_return
+	defer json.destroy_value(j, allocator)
 
-	s = story_make()
-	s.root = convert_json(j.(json.Object)["root"]) or_return
+	s = story_make(allocator)
+	s.root = convert_json(j.(json.Object)["root"], allocator) or_return
 	return
 }
 
-story_destroy :: proc(s: ^Story) {
+story_destroy :: proc(s: ^Story, allocator := context.allocator) {
 	delete(s.ev_stack)
 	strings.builder_destroy(&s.builder)
-	destroy_element(s.root)
+	destroy_element(s.root, allocator)
 }
 
 apply_elem :: proc {
