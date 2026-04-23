@@ -186,5 +186,9 @@ convert_json_choice :: proc(t: ^testing.T) {
 	}
 	defer ink.destroy_element(res)
 
-	testing.expect_value(t, res.(ink.Choice), ink.Choice{path = "path.to.choice", flag = 18})
+	testing.expect_value(
+		t,
+		res.(ink.Choice),
+		ink.Choice{path = "path.to.choice", flag = {.Has_Start_Content, .Once_Only}},
+	)
 }

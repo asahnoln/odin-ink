@@ -61,11 +61,13 @@ destroy_element :: proc(e: Element, allocator := context.allocator) {
 	case string:
 		delete(v, allocator)
 	case DivertValue:
-		destroy_element(v.path)
+		delete(v.path, allocator)
 	case Divert:
-		destroy_element(v.path)
+		delete(v.path, allocator)
 	case VarAssignTemp:
-		destroy_element(v.name)
+		delete(v.name, allocator)
+	case Choice:
+		delete(v.path, allocator)
 	case bool, f64, Cmd:
 	}
 }
@@ -108,6 +110,7 @@ parse_str_into_elem :: proc(
 // - Divert
 // - DivertValue
 // - VarAssignTemp
+// - Choice
 // - General map[string]Element
 parse_obj_into_elem :: proc(
 	obj: json.Object,
@@ -116,6 +119,13 @@ parse_obj_into_elem :: proc(
 	e: Element,
 	err: JSON_Conversion_Error,
 ) {
+	if path, ok := obj["*"].(string); ok {
+		return Choice {
+				path = strings.clone(path, allocator),
+				flag = transmute(Choice_Flags)cast(byte)obj["flg"].(i64),
+			},
+			nil
+	}
 	if path, ok := obj["^->"].(string); ok {
 		return DivertValue{path = strings.clone(path, allocator)}, nil
 	}

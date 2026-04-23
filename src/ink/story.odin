@@ -26,6 +26,7 @@ Element :: union {
 	Divert,
 	DivertValue,
 	VarAssignTemp,
+	Choice,
 }
 
 // Divert value which is pushed to the evaluation stack and then popped into a variable.
@@ -42,6 +43,22 @@ Divert :: struct {
 // A temp variable which takes value from evaluation stack
 VarAssignTemp :: struct {
 	name: string,
+}
+
+Choice_Flag :: enum {
+	Has_Condition,
+	Has_Start_Content,
+	Has_Choice_Only_Content,
+	Is_Invisible_Default,
+	Once_Only,
+}
+
+Choice_Flags :: bit_set[Choice_Flag]
+
+// Choice object
+Choice :: struct {
+	path: string,
+	flag: Choice_Flags,
 }
 
 // Story mode changed with commands
