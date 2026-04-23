@@ -17,3 +17,22 @@ make_story_from_json :: proc(t: ^testing.T) {
 		"One line of text.",
 	)
 }
+
+@(test)
+continue_text :: proc(t: ^testing.T) {
+	s, err := ink.story_make(#load("testdata/two_lines.json"))
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+	defer ink.story_destroy(&s)
+
+	testing.expect_value(t, s.can_continue, true)
+
+	l := ink.story_continue(&s)
+	testing.expect_value(t, l, "One line\n")
+	testing.expect_value(t, s.can_continue, true)
+
+	l = ink.story_continue(&s)
+	testing.expect_value(t, l, "Second line\n")
+	testing.expect_value(t, s.can_continue, false)
+}
