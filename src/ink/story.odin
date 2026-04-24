@@ -17,17 +17,20 @@ Apply_Func_Error :: struct {
 // Element of a Story.
 // Parsed from JSON into understandable structs.
 Element :: union {
-	Cmd,
+	bool,
 	string,
 	f64,
-	bool,
-	[]Element,
-	map[string]Element,
+	Cmd,
+	Func,
+	Container,
 	Divert,
 	DivertValue,
 	VarAssignTemp,
 	Choice,
+	map[string]Element,
 }
+
+Container :: []Element
 
 // Divert value which is pushed to the evaluation stack and then popped into a variable.
 DivertValue :: struct {
@@ -94,11 +97,13 @@ Stack_Element :: union {
 
 // Story is the main object of Ink. It hold all information about the Story.
 Story :: struct {
-	mode:         Mode,
-	ev_stack:     [dynamic]Stack_Element,
-	current_text: string,
-	builder:      strings.Builder,
-	root:         Element,
+	mode:               Mode,
+	ev_stack:           [dynamic]Stack_Element,
+	current_text:       string,
+	current_text_array: [dynamic]string,
+	current_text_index: uint,
+	root:               Element,
+	can_continue:       bool,
 }
 
 // Story_Make_Error happens when there are JSON errors while parsing or converting
@@ -114,10 +119,7 @@ story_make :: proc {
 
 // Makes empty Story
 story_make_empty :: proc(allocator := context.allocator) -> Story {
-	return Story {
-		builder = strings.builder_make(allocator),
-		ev_stack = make([dynamic]Stack_Element, allocator),
-	}
+	return Story{ev_stack = make([dynamic]Stack_Element, allocator)}
 }
 
 // Creates Story populated from given JSON data
@@ -133,29 +135,58 @@ story_make_from_json :: proc(
 
 	s = story_make(allocator)
 	s.root = convert_json(j.(json.Object)["root"], allocator) or_return
+	apply_elem(&s, s.root)
 	return
 }
 
 // Deletes Story's evaluation stack, root container and builder
 story_destroy :: proc(s: ^Story, allocator := context.allocator) {
 	delete(s.ev_stack)
-	strings.builder_destroy(&s.builder)
 	destroy_element(s.root, allocator)
+	delete(s.current_text_array)
 }
 
-apply_elem :: proc {
-	apply_elem_cmd,
-	apply_elem_func,
-	apply_elem_str,
+story_continue :: proc(s: ^Story) -> string {
+	defer s.current_text_index += 1
+
+	s.can_continue = s.current_text_index < len(s.current_text_array) - 1
+	return s.current_text_array[s.current_text_index]
+}
+
+apply_elem :: proc(s: ^Story, el: Element) -> Apply_Elem_Error {
+	#partial switch v in el {
+	case Container:
+		apply_elem_container(s, v)
+	case string:
+		apply_elem_str(s, v)
+	case Cmd:
+		apply_elem_cmd(s, v)
+	case Func:
+		return apply_elem_func(s, v)
+	}
+
+	return nil
+}
+
+apply_elem_container :: proc(s: ^Story, el: Container) {
+	for e in el {
+		apply_elem(s, e)
+	}
 }
 
 // Apply common text to Story
 apply_elem_str :: proc(s: ^Story, el: string) {
-	strings.write_string(&s.builder, s.current_text)
-	strings.write_string(&s.builder, el)
-	s.current_text = strings.to_string(s.builder)
+	b := strings.builder_make()
+	defer strings.builder_destroy(&b)
 
-	strings.builder_reset(&s.builder)
+	strings.write_string(&b, s.current_text)
+	strings.write_string(&b, el)
+	s.current_text = strings.to_string(b)
+
+	if el == "\n" {
+		append(&s.current_text_array, (s.current_text))
+		s.current_text = ""
+	}
 }
 
 // Apply command to Story

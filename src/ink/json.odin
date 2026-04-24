@@ -68,7 +68,7 @@ destroy_element :: proc(e: Element, allocator := context.allocator) {
 		delete(v.name, allocator)
 	case Choice:
 		delete(v.path, allocator)
-	case bool, f64, Cmd:
+	case bool, f64, Cmd, Func:
 	}
 }
 
