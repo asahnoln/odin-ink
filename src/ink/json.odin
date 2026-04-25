@@ -7,6 +7,7 @@ import "core:strings"
 // JSON_Conversion_Error happens on JSON conversion
 JSON_Conversion_Error :: union {
 	Unknown_Cmd_Error,
+	runtime.Allocator_Error,
 }
 
 // Unknown_Cmd_Error states that an unknown command was met and it's undefined what to convert into
@@ -34,7 +35,7 @@ convert_json :: proc(
 	case json.Object:
 		return parse_obj_into_elem(val, allocator)
 	case json.Array:
-		res := make([]Element, len(val), allocator)
+		res := make([]Element, len(val), allocator) or_return
 		for v, i in val {
 			res[i] = convert_json(v, allocator) or_return
 		}
@@ -146,7 +147,7 @@ parse_obj_into_elem :: proc(
 	res := make(map[string]Element, len(obj), allocator)
 	for k, v in obj {
 		if s, ok := v.(string); ok {
-			res[k] = strings.clone(s, allocator)
+			res[k] = strings.clone(s, allocator) or_return
 		} else {
 			res[k] = convert_json(v, allocator) or_return
 		}
