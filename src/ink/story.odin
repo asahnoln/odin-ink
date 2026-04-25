@@ -6,19 +6,20 @@ import "core:strings"
 
 // Error when applying element to Story
 Apply_Elem_Error :: union {
-	Stack_Element_Cast_Error,
 	Error,
+	Stack_Element_Cast_Error,
 	runtime.Allocator_Error,
 }
 
 // Error when applying math func to Story
 Stack_Element_Cast_Error :: struct {
-	T:    typeid,
-	v, y: Stack_Element,
+	T: typeid,
+	v: Stack_Element,
 }
 
 Error :: enum {
-	Short_Stack_Error,
+	None,
+	Short_Stack,
 }
 
 // Element of a Story.
@@ -53,6 +54,7 @@ Divert :: struct {
 // A temp variable which takes value from evaluation stack
 VarAssignTemp :: struct {
 	name: string,
+	v:    Stack_Element,
 }
 
 Choice_Flag :: enum {
@@ -101,6 +103,7 @@ Func :: enum {
 Stack_Element :: union {
 	f64,
 	string,
+	DivertValue,
 }
 
 // Story is the main object of Ink. It hold all information about the Story.
@@ -108,6 +111,7 @@ Story :: struct {
 	can_continue:       bool,
 	current_choices:    [dynamic]Choice,
 	root:               Element,
+	vars:               map[string]VarAssignTemp,
 	mode:               Mode,
 	ev_stack:           [dynamic]Stack_Element,
 	current_text_array: [dynamic]string,
@@ -132,6 +136,7 @@ story_make_empty :: proc(allocator := context.allocator) -> Story {
 	return Story {
 		ev_stack = make([dynamic]Stack_Element, allocator),
 		current_choices = make([dynamic]Choice, allocator),
+		vars = make(map[string]VarAssignTemp, allocator),
 		allocator = allocator,
 	}
 }
@@ -162,6 +167,7 @@ story_destroy :: proc(s: ^Story) -> runtime.Allocator_Error {
 	destroy_element(s.root, s.allocator) or_return
 	delete(s.current_text_array) or_return
 	delete(s.current_choices) or_return
+	delete(s.vars) or_return
 
 	return nil
 }
@@ -199,6 +205,8 @@ apply_elem :: proc(s: ^Story, el: Element) -> Apply_Elem_Error {
 		return apply_elem_func(s, v)
 	case Choice:
 		return apply_elem_choice(s, &v)
+	case VarAssignTemp:
+		return apply_elem_var_assign_temp(s, &v)
 	}
 
 	return nil
@@ -237,21 +245,33 @@ apply_elem_cmd :: proc(s: ^Story, el: Cmd) {
 
 // Apply math func to Story
 apply_elem_func :: proc(s: ^Story, el: Func) -> Apply_Elem_Error {
-	x := ev_stack_pop(f64, &s.ev_stack) or_return
-	y := ev_stack_pop(f64, &s.ev_stack) or_return
+	x := pop_ev_stack_and_cast(f64, &s.ev_stack) or_return
+	y := pop_ev_stack_and_cast(f64, &s.ev_stack) or_return
 
 	append(&s.ev_stack, x + y) or_return
 
 	return nil
 }
 
-// Pops f64 number from Story's evaluation stack
-ev_stack_pop :: proc($T: typeid, st: ^[dynamic]Stack_Element) -> (x: T, err: Apply_Elem_Error) {
+pop_ev_stack :: proc(st: ^[dynamic]Stack_Element) -> (Stack_Element, Error) {
 	el, ok := pop_safe(st)
 	if !ok {
-		return x, .Short_Stack_Error
+		return nil, .Short_Stack
 	}
 
+	return el, nil
+}
+
+pop_ev_stack_and_cast :: proc(
+	$T: typeid,
+	st: ^[dynamic]Stack_Element,
+) -> (
+	x: T,
+	err: Apply_Elem_Error,
+) {
+	el := pop_ev_stack(st) or_return
+
+	ok: bool
 	x, ok = el.(T)
 	if !ok {
 		err = Stack_Element_Cast_Error {
@@ -265,8 +285,17 @@ ev_stack_pop :: proc($T: typeid, st: ^[dynamic]Stack_Element) -> (x: T, err: App
 
 // Populate choices of Story. Takes text from evaluation stack
 apply_elem_choice :: proc(s: ^Story, c: ^Choice) -> Apply_Elem_Error {
-	c.text = ev_stack_pop(string, &s.ev_stack) or_return
+	c.text = pop_ev_stack_and_cast(string, &s.ev_stack) or_return
 	append(&s.current_choices, c^) or_return
+
+	return nil
+}
+
+apply_elem_var_assign_temp :: proc(s: ^Story, t: ^VarAssignTemp) -> Apply_Elem_Error {
+	el := pop_ev_stack(&s.ev_stack) or_return
+
+	t.v = el
+	s.vars[t.name] = t^
 
 	return nil
 }

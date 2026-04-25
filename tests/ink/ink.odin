@@ -63,7 +63,7 @@ apply_elem_func_err_short_stack :: proc(t: ^testing.T) {
 	defer ink.story_destroy(&s)
 
 	err := ink.apply_elem(&s, ink.Func.Plus)
-	testing.expect_value(t, err, ink.Error.Short_Stack_Error)
+	testing.expect_value(t, err, ink.Error.Short_Stack)
 }
 
 @(test)
@@ -94,5 +94,24 @@ apply_elem_choice :: proc(t: ^testing.T) {
 		t,
 		s.current_choices[0],
 		ink.Choice{path = "path.to.smth", text = "Choose me!"},
+	)
+}
+
+@(test)
+apply_elem_tempvar :: proc(t: ^testing.T) {
+	s := ink.story_make()
+	append(&s.ev_stack, ink.DivertValue{path = "lol"})
+	defer ink.story_destroy(&s)
+
+	err := ink.apply_elem(&s, ink.VarAssignTemp{name = "someVar"})
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+
+	testing.expect_value(t, len(s.ev_stack), 0)
+	testing.expect_value(
+		t,
+		s.vars["someVar"],
+		ink.VarAssignTemp{name = "someVar", v = ink.DivertValue{path = "lol"}},
 	)
 }
