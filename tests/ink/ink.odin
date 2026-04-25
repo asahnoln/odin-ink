@@ -54,7 +54,7 @@ apply_elem_func_err :: proc(t: ^testing.T) {
 	defer ink.story_destroy(&s)
 
 	err := ink.apply_elem(&s, ink.Func.Plus)
-	testing.expect_value(t, err, ink.Apply_Func_Error{func = .Plus, x = "NO"})
+	testing.expect_value(t, err, ink.Stack_Element_Cast_Error{T = f64, v = "NO"})
 }
 
 @(test)
@@ -76,4 +76,23 @@ apply_elem_str :: proc(t: ^testing.T) {
 
 	ink.apply_elem(&s, "\n")
 	testing.expect_value(t, s.current_text_array[1], "\n")
+}
+
+@(test)
+apply_elem_choice :: proc(t: ^testing.T) {
+	s := ink.story_make()
+	append(&s.ev_stack, "Choose me!")
+	defer ink.story_destroy(&s)
+
+	err := ink.apply_elem(&s, ink.Choice{path = "path.to.smth"})
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+
+	testing.expect_value(t, len(s.current_choices), 1)
+	testing.expect_value(
+		t,
+		s.current_choices[0],
+		ink.Choice{path = "path.to.smth", text = "Choose me!"},
+	)
 }
