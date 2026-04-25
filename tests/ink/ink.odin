@@ -115,3 +115,16 @@ apply_elem_tempvar :: proc(t: ^testing.T) {
 		ink.VarAssignTemp{name = "someVar", v = ink.DivertValue{path = "lol"}},
 	)
 }
+
+// @(test)
+// apply_elem_divert :: proc(t: ^testing.T) {
+// 	s := ink.story_make()
+// 	defer ink.story_destroy(&s)
+//
+// 	err := ink.apply_elem(&s, ink.Divert{path = "0.0.s"})
+// 	if !testing.expect_value(t, err, nil) {
+// 		return
+// 	}
+//
+// 	testing.expect_value(t, s.divert_container, ink.Divert_Container{c = ink.Container{}, i = 0})
+// }
