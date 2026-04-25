@@ -12,7 +12,7 @@
   "enable_procedure_context": false,
   "enable_snippets": true,
   "enable_overload_resolution": true,
-  "enable_fake_methods": false,
+  "enable_fake_methods": true,
   "enable_comp_lit_signature_help": true,
   "enable_comp_lit_signature_help_use_docs": true,
   "enable_code_action_invert_if": true
