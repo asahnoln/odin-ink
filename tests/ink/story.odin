@@ -27,12 +27,15 @@ continue_text :: proc(t: ^testing.T) {
 	}
 	defer ink.story_destroy(&s)
 
+	testing.expect_value(t, s.can_continue, true)
+
 	l := ink.story_continue(&s)
 	testing.expect_value(t, l, "One line.\n")
 	testing.expect_value(t, s.can_continue, true)
+	delete(l)
 
 	l = ink.story_continue(&s)
 	testing.expect_value(t, l, "Second line.\n")
 	testing.expect_value(t, s.can_continue, false)
-
+	delete(l)
 }

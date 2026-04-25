@@ -63,6 +63,8 @@ apply_elem_str :: proc(t: ^testing.T) {
 	defer ink.story_destroy(&s)
 
 	ink.apply_elem(&s, "Text")
+	testing.expect_value(t, s.current_text_array[0], "Text")
+
 	ink.apply_elem(&s, "\n")
-	testing.expect_value(t, s.current_text_array[0], "Text\n")
+	testing.expect_value(t, s.current_text_array[1], "\n")
 }

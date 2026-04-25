@@ -135,6 +135,7 @@ story_make_from_json :: proc(
 
 	s = story_make(allocator)
 	s.root = convert_json(j.(json.Object)["root"], allocator) or_return
+	s.can_continue = true
 	apply_elem(&s, s.root)
 	return
 }
@@ -146,11 +147,25 @@ story_destroy :: proc(s: ^Story, allocator := context.allocator) {
 	delete(s.current_text_array)
 }
 
+// Continues Story. It's user's responsibility to deallocate given string
 story_continue :: proc(s: ^Story) -> string {
-	defer s.current_text_index += 1
+	// NOTE: Don't destroy the builder as it destroys its buffer that we give to the user
+	b := strings.builder_make()
+	strings.builder_destroy(&b)
+
+	for s.current_text_index < len(s.current_text_array) {
+		text := s.current_text_array[s.current_text_index]
+		strings.write_string(&b, text)
+		s.current_text_index += 1
+
+		if text == "\n" {
+			break
+		}
+	}
+
 
 	s.can_continue = s.current_text_index < len(s.current_text_array) - 1
-	return s.current_text_array[s.current_text_index]
+	return strings.to_string(b)
 }
 
 apply_elem :: proc(s: ^Story, el: Element) -> Apply_Elem_Error {
@@ -168,6 +183,7 @@ apply_elem :: proc(s: ^Story, el: Element) -> Apply_Elem_Error {
 	return nil
 }
 
+// Applies Container to Story
 apply_elem_container :: proc(s: ^Story, el: Container) {
 	for e in el {
 		apply_elem(s, e)
@@ -176,17 +192,7 @@ apply_elem_container :: proc(s: ^Story, el: Container) {
 
 // Apply common text to Story
 apply_elem_str :: proc(s: ^Story, el: string) {
-	b := strings.builder_make()
-	defer strings.builder_destroy(&b)
-
-	strings.write_string(&b, s.current_text)
-	strings.write_string(&b, el)
-	s.current_text = strings.to_string(b)
-
-	if el == "\n" {
-		append(&s.current_text_array, (s.current_text))
-		s.current_text = ""
-	}
+	append(&s.current_text_array, el)
 }
 
 // Apply command to Story
