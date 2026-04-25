@@ -38,4 +38,8 @@ continue_text :: proc(t: ^testing.T) {
 	testing.expect_value(t, l, "Second line.\n")
 	testing.expect_value(t, s.can_continue, false)
 	delete(l)
+
+	l = ink.story_continue(&s)
+	testing.expect_value(t, l, "")
+	testing.expect_value(t, s.can_continue, false)
 }

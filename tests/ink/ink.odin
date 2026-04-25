@@ -58,6 +58,15 @@ apply_elem_func_err :: proc(t: ^testing.T) {
 }
 
 @(test)
+apply_elem_func_err_short_stack :: proc(t: ^testing.T) {
+	s := ink.story_make()
+	defer ink.story_destroy(&s)
+
+	err := ink.apply_elem(&s, ink.Func.Plus)
+	testing.expect_value(t, err, ink.Error.Short_Stack_Error)
+}
+
+@(test)
 apply_elem_str :: proc(t: ^testing.T) {
 	s := ink.story_make()
 	defer ink.story_destroy(&s)

@@ -1,5 +1,6 @@
 package ink
 
+import "base:runtime"
 import "core:encoding/json"
 import "core:strings"
 
@@ -46,30 +47,32 @@ convert_json :: proc(
 }
 
 // Deletes allocated strings, slices and maps in Element
-destroy_element :: proc(e: Element, allocator := context.allocator) {
+destroy_element :: proc(e: Element, allocator := context.allocator) -> runtime.Allocator_Error {
 	switch v in e {
 	case []Element:
 		for x in v {
-			destroy_element(x, allocator)
+			destroy_element(x, allocator) or_return
 		}
-		delete(v, allocator)
+		delete(v, allocator) or_return
 	case map[string]Element:
 		for _, x in v {
-			destroy_element(x, allocator)
+			destroy_element(x, allocator) or_return
 		}
-		delete(v)
+		delete(v) or_return
 	case string:
-		delete(v, allocator)
+		delete(v, allocator) or_return
 	case DivertValue:
-		delete(v.path, allocator)
+		delete(v.path, allocator) or_return
 	case Divert:
-		delete(v.path, allocator)
+		delete(v.path, allocator) or_return
 	case VarAssignTemp:
-		delete(v.name, allocator)
+		delete(v.name, allocator) or_return
 	case Choice:
-		delete(v.path, allocator)
+		delete(v.path, allocator) or_return
 	case bool, f64, Cmd, Func:
 	}
+
+	return nil
 }
 
 // Parses received JSON String into proper Element: string or Cmd
