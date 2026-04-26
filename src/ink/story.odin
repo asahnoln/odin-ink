@@ -4,6 +4,7 @@ import "core:strings"
 Story :: struct {
 	can_continue: bool,
 	root:         Container,
+	index:        int,
 }
 
 Element :: union {
@@ -39,11 +40,17 @@ story_continue :: proc(s: ^Story) -> string {
 	b := strings.builder_make()
 
 	i: int
-	for e, i in s.root {
-		strings.write_string(&b, e.(string))
+	for s.index < len(s.root) {
+		e := s.root[s.index].(string)
+		strings.write_string(&b, e)
+		s.index += 1
+
+		if e == "\n" {
+			break
+		}
 	}
 
-	s.can_continue = i == len(s.root)
+	s.can_continue = s.index < len(s.root)
 
 	return strings.to_string(b)
 
