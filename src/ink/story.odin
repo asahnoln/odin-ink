@@ -30,14 +30,9 @@ make_story_from_container :: proc(c: Container) -> Story {
 }
 
 story_continue :: proc(s: ^Story) -> string {
-	if len(s.current_container) == 0 {
-		return ""
-	}
-
 	b := strings.builder_make()
 
-	i: int
-	main_loop: for s.index < len(s.current_container) {
+	for s.index < len(s.current_container) {
 		e := s.current_container[s.index]
 
 		switch v in e {
@@ -48,14 +43,14 @@ story_continue :: proc(s: ^Story) -> string {
 			strings.write_string(&b, v)
 			s.index += 1
 			if v == "\n" {
-				break main_loop
+				s.can_continue = s.index < len(s.current_container)
+				return strings.to_string(b)
 			}
 		}
 	}
 
-	s.can_continue = s.index < len(s.current_container)
 
-	return strings.to_string(b)
+	return ""
 
 }
 
