@@ -4,14 +4,13 @@ import "core:strings"
 
 Story :: struct {
 	root:              Container,
-	index:             int,
 	current_container: Detailed_Container,
 }
 
 Detailed_Container :: struct {
-	parent:     ^Container,
-	c:          ^Container,
-	last_index: int,
+	parent: ^Detailed_Container,
+	c:      ^Container,
+	index:  int,
 }
 
 Element :: union {
@@ -38,29 +37,38 @@ story_continue :: proc(s: ^Story) -> string {
 
 	b := strings.builder_make()
 
-	for s.index < len(s.current_container.c) {
-		e := s.current_container.c[s.index]
+	for s.current_container.index < len(s.current_container.c) {
+		e := s.current_container.c[s.current_container.index]
 
 		if _, ok := e.(Container); ok {
-			s.current_container.parent = s.current_container.c
-			s.current_container.c = &s.current_container.c[s.index].(Container)
-			s.current_container.last_index = s.index + 1
-			s.index = 0
+			p := new(Detailed_Container)
+			p.parent = s.current_container.parent
+			p.c = s.current_container.c
+			p.index = s.current_container.index + 1
+
+			s.current_container.parent = p
+			s.current_container.c = &s.current_container.c[s.current_container.index].(Container)
+			s.current_container.index = 0
 			return story_continue(s)
 		}
 
 		strings.write_string(&b, e.(string))
-		s.index += 1
+		s.current_container.index += 1
 
 		if e.(string) == "\n" {
 			break
 		}
 	}
 
-	if s.current_container.parent != nil && s.index == len(s.current_container.c) {
-		s.current_container.c = s.current_container.parent
-		s.current_container.parent = nil
-		s.index = s.current_container.last_index
+	if s.current_container.parent != nil &&
+	   s.current_container.index == len(s.current_container.c) {
+		p := s.current_container.parent
+
+		s.current_container.c = p.c
+		s.current_container.index = p.index
+		s.current_container.parent = p.parent
+
+		free(p)
 	}
 
 	return strings.to_string(b)
@@ -69,5 +77,5 @@ story_continue :: proc(s: ^Story) -> string {
 
 can_continue :: proc(s: Story) -> bool {
 	c := s.current_container.c^ if s.current_container.c != nil else s.root
-	return s.index < len(c)
+	return s.current_container.index < len(c)
 }
