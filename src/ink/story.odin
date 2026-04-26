@@ -2,9 +2,10 @@ package ink
 
 import "core:strings"
 Story :: struct {
-	can_continue: bool,
-	root:         Container,
-	index:        int,
+	can_continue:      bool,
+	root:              Container,
+	index:             int,
+	current_container: Container,
 }
 
 Element :: union {
@@ -12,20 +13,16 @@ Element :: union {
 	string,
 }
 
-Container :: []Element
+Container :: distinct []Element
 
 make_story :: proc {
-	make_story_empty,
 	make_story_from_container,
-}
-
-make_story_empty :: proc() -> Story {
-	return Story{}
 }
 
 make_story_from_container :: proc(c: Container) -> Story {
 	s := Story {
-		root = c,
+		root              = c,
+		current_container = c,
 	}
 
 	s.can_continue = has_string(s.root)
@@ -33,24 +30,30 @@ make_story_from_container :: proc(c: Container) -> Story {
 }
 
 story_continue :: proc(s: ^Story) -> string {
-	if len(s.root) == 0 {
+	if len(s.current_container) == 0 {
 		return ""
 	}
 
 	b := strings.builder_make()
 
 	i: int
-	for s.index < len(s.root) {
-		e := s.root[s.index].(string)
-		strings.write_string(&b, e)
-		s.index += 1
+	main_loop: for s.index < len(s.current_container) {
+		e := s.current_container[s.index]
 
-		if e == "\n" {
-			break
+		switch v in e {
+		case Container:
+			s.current_container = v
+			return story_continue(s)
+		case string:
+			strings.write_string(&b, v)
+			s.index += 1
+			if v == "\n" {
+				break main_loop
+			}
 		}
 	}
 
-	s.can_continue = s.index < len(s.root)
+	s.can_continue = s.index < len(s.current_container)
 
 	return strings.to_string(b)
 
