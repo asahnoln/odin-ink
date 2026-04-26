@@ -6,6 +6,8 @@ Story :: struct {
 	root:              Container,
 	index:             int,
 	current_container: Container,
+	last_indexes:      [dynamic]int,
+	parents:           [dynamic]Container,
 }
 
 Element :: union {
@@ -30,6 +32,15 @@ make_story_from_container :: proc(c: Container) -> Story {
 }
 
 story_continue :: proc(s: ^Story) -> string {
+	if s.index == len(s.current_container) {
+		// append(&s.parents, s.root)
+		s.current_container, _ = pop_safe(&s.parents)
+		delete(s.parents)
+		append(&s.last_indexes, 1)
+		s.index, _ = pop_safe(&s.last_indexes)
+		delete(s.last_indexes)
+	}
+
 	b := strings.builder_make()
 
 	for s.index < len(s.current_container) {

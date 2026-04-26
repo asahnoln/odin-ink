@@ -80,3 +80,26 @@ continue_nested_container_second_line :: proc(t: ^testing.T) {
 	defer delete(l)
 	testing.expect_value(t, l, "Second line.\n")
 }
+
+@(test)
+continue_nested_container_out :: proc(t: ^testing.T) {
+	s := ink.make_story(
+	ink.Container {
+		ink.Container { 	//
+			"First line.",
+			"\n",
+		},
+		"Second line.",
+		"\n",
+	},
+	)
+
+	// append(&s.parents, s.root)
+	// append(&s.last_indexes, 1)
+	s.current_container = s.root[0].(ink.Container)
+	s.index = 2
+
+	l := ink.story_continue(&s)
+	defer delete(l)
+	testing.expect_value(t, l, "Second line.\n")
+}
