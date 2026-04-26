@@ -9,7 +9,7 @@ Story :: struct {
 
 Detailed_Container :: struct {
 	parent: ^Detailed_Container,
-	c:      ^Container,
+	c:      Container,
 	index:  int,
 }
 
@@ -26,9 +26,7 @@ make_story :: proc() -> Story {
 
 story_continue :: proc(s: ^Story) -> string {
 	if s.current_container.c == nil {
-		s.current_container = {
-			c = &s.root,
-		}
+		s.current_container.c = s.root
 	}
 
 	if len(s.current_container.c) == 0 {
@@ -40,14 +38,14 @@ story_continue :: proc(s: ^Story) -> string {
 	for s.current_container.index < len(s.current_container.c) {
 		e := s.current_container.c[s.current_container.index]
 
-		if _, ok := e.(Container); ok {
+		if c, ok := e.(Container); ok {
 			p := new(Detailed_Container)
 			p.parent = s.current_container.parent
 			p.c = s.current_container.c
 			p.index = s.current_container.index + 1
 
 			s.current_container.parent = p
-			s.current_container.c = &s.current_container.c[s.current_container.index].(Container)
+			s.current_container.c = c
 			s.current_container.index = 0
 			return story_continue(s)
 		}
@@ -76,6 +74,6 @@ story_continue :: proc(s: ^Story) -> string {
 
 
 can_continue :: proc(s: Story) -> bool {
-	c := s.current_container.c^ if s.current_container.c != nil else s.root
+	c := s.current_container.c if s.current_container.c != nil else s.root
 	return s.current_container.index < len(c)
 }
