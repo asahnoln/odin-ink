@@ -35,6 +35,17 @@ story_continue :: proc(s: ^Story) -> string {
 
 	b := strings.builder_make()
 
+	defer if s.current_container.parent != nil &&
+	   s.current_container.index == len(s.current_container.c) {
+		p := s.current_container.parent
+
+		s.current_container.c = p.c
+		s.current_container.index = p.index
+		s.current_container.parent = p.parent
+
+		free(p)
+	}
+
 	for s.current_container.index < len(s.current_container.c) {
 		e := s.current_container.c[s.current_container.index]
 
@@ -47,6 +58,7 @@ story_continue :: proc(s: ^Story) -> string {
 			s.current_container.parent = p
 			s.current_container.c = c
 			s.current_container.index = 0
+
 			return story_continue(s)
 		}
 
@@ -56,17 +68,6 @@ story_continue :: proc(s: ^Story) -> string {
 		if e.(string) == "\n" {
 			break
 		}
-	}
-
-	if s.current_container.parent != nil &&
-	   s.current_container.index == len(s.current_container.c) {
-		p := s.current_container.parent
-
-		s.current_container.c = p.c
-		s.current_container.index = p.index
-		s.current_container.parent = p.parent
-
-		free(p)
 	}
 
 	return strings.to_string(b)

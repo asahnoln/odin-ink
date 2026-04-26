@@ -81,11 +81,15 @@ continue_deeper :: proc(t: ^testing.T) {
 continue_different_levels :: proc(t: ^testing.T) {
 	s := ink.make_story()
 	s.root = ink.Container {
-		ink.Container { 	//
-			"Deeper first line, waiting go upper.",
-			"\n",
+		ink.Container {
+			ink.Container { 	//
+				ink.Container{"Deeper first line, waiting go upper.", "\n"},
+			},
 		},
-		"Second line.",
+		ink.Container { 	//
+			ink.Container{"Second line.", "\n"},
+		},
+		"Third line.",
 		"\n",
 	}
 	testing.expect_value(t, ink.can_continue(s), true)
@@ -100,5 +104,9 @@ continue_different_levels :: proc(t: ^testing.T) {
 	testing.expect_value(t, l, "Second line.\n")
 	delete(l)
 
-	testing.expect_value(t, ink.can_continue(s), false)
+	testing.expect_value(t, ink.can_continue(s), true)
+
+	l = ink.story_continue(&s)
+	testing.expect_value(t, l, "Third line.\n")
+	delete(l)
 }
