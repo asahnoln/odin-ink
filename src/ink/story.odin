@@ -32,37 +32,32 @@ make_story_from_container :: proc(c: Container) -> Story {
 }
 
 story_continue :: proc(s: ^Story) -> string {
-	if s.index == len(s.current_container) {
-		// append(&s.parents, s.root)
-		s.current_container, _ = pop_safe(&s.parents)
-		delete(s.parents)
-		append(&s.last_indexes, 1)
-		s.index, _ = pop_safe(&s.last_indexes)
-		delete(s.last_indexes)
+	if !s.can_continue {
+		return ""
 	}
 
 	b := strings.builder_make()
 
-	for s.index < len(s.current_container) {
-		e := s.current_container[s.index]
+	collect(&b, s.root)
 
+	s.can_continue = false
+
+	return strings.to_string(b)
+}
+
+collect :: proc(b: ^strings.Builder, c: Container) {
+	for e in c {
 		switch v in e {
 		case Container:
-			s.current_container = v
-			return story_continue(s)
+			collect(b, v)
 		case string:
-			strings.write_string(&b, v)
-			s.index += 1
+			strings.write_string(b, v)
+
 			if v == "\n" {
-				s.can_continue = s.index < len(s.current_container)
-				return strings.to_string(b)
+				return
 			}
 		}
 	}
-
-
-	return ""
-
 }
 
 has_string :: proc(c: Container) -> bool {

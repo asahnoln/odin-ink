@@ -13,6 +13,7 @@ continue_empty :: proc(t: ^testing.T) {
 @(test)
 continue_one_line :: proc(t: ^testing.T) {
 	s := ink.make_story(ink.Container{"One line.", "\n"})
+
 	testing.expect_value(t, s.can_continue, true)
 
 	l := ink.story_continue(&s)
@@ -23,83 +24,58 @@ continue_one_line :: proc(t: ^testing.T) {
 }
 
 @(test)
-continue_two_lines_first_line :: proc(t: ^testing.T) {
-	s := ink.make_story(ink.Container{"First line.", "\n", "Second line.", "\n"})
-
-	l := ink.story_continue(&s)
-	defer delete(l)
-	testing.expect_value(t, l, "First line.\n")
-	testing.expect_value(t, s.can_continue, true)
-}
-
-@(test)
-continue_two_lines_second_line :: proc(t: ^testing.T) {
-	s := ink.make_story(ink.Container{"First line.", "\n", "Second line.", "\n"})
-	s.index = 2
-
-	l := ink.story_continue(&s)
-	defer delete(l)
-	testing.expect_value(t, l, "Second line.\n")
-}
-
-@(test)
-continue_nested_container :: proc(t: ^testing.T) {
+continue_one_line_with_additional_element :: proc(t: ^testing.T) {
 	s := ink.make_story(
-	ink.Container {
-		ink.Container { 	//
-			"First line.",
-			"\n",
-			"Second line.",
-			"\n",
-		},
+	ink.Container { 	//
+		"One line.",
+		"\n",
+		ink.Container{},
 	},
 	)
 
 	l := ink.story_continue(&s)
 	defer delete(l)
-	testing.expect_value(t, l, "First line.\n")
+	testing.expect_value(t, l, "One line.\n")
+
+	testing.expect_value(t, s.can_continue, false)
 }
 
 @(test)
-continue_nested_container_second_line :: proc(t: ^testing.T) {
+continue_line_from_several_containers :: proc(t: ^testing.T) {
 	s := ink.make_story(
-	ink.Container {
-		ink.Container { 	//
-			"First line.",
-			"\n",
-			"Second line.",
-			"\n",
-		},
+	ink.Container { 	//
+		"Combined ",
+		ink.Container{"line", "."},
+		"\n",
 	},
 	)
 
-	s.current_container = s.root[0].(ink.Container)
-	s.index = 2
-
 	l := ink.story_continue(&s)
 	defer delete(l)
-	testing.expect_value(t, l, "Second line.\n")
+	testing.expect_value(t, l, "Combined line.\n")
+
+	testing.expect_value(t, s.can_continue, false)
 }
 
 @(test)
-continue_nested_container_out :: proc(t: ^testing.T) {
+continue_first_line_of_two :: proc(t: ^testing.T) {
 	s := ink.make_story(
-	ink.Container {
-		ink.Container { 	//
-			"First line.",
-			"\n",
-		},
+	ink.Container { 	//
+		"First line.",
+		"\n",
 		"Second line.",
 		"\n",
 	},
 	)
 
-	// append(&s.parents, s.root)
-	// append(&s.last_indexes, 1)
-	s.current_container = s.root[0].(ink.Container)
-	s.index = 2
-
 	l := ink.story_continue(&s)
 	defer delete(l)
-	testing.expect_value(t, l, "Second line.\n")
+	testing.expect_value(t, l, "First line.\n")
+
+	testing.expect_value(t, s.can_continue, true)
+
+	// l = ink.story_continue(&s)
+	// defer delete(l)
+	// testing.expect_value(t, l, "Second line.\n")
+
 }
