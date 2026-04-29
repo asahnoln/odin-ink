@@ -2,12 +2,9 @@ package ink
 
 import "core:strings"
 Story :: struct {
-	can_continue:      bool,
-	root:              Container,
-	index:             int,
-	current_container: Container,
-	last_indexes:      [dynamic]int,
-	parents:           [dynamic]Container,
+	can_continue: bool,
+	root:         Container,
+	index_path:   [dynamic]int,
 }
 
 Element :: union {
@@ -23,12 +20,15 @@ make_story :: proc {
 
 make_story_from_container :: proc(c: Container) -> Story {
 	s := Story {
-		root              = c,
-		current_container = c,
+		root = c,
 	}
 
 	s.can_continue = has_string(s.root)
 	return s
+}
+
+destroy_story :: proc(s: ^Story) {
+	delete(s.index_path)
 }
 
 story_continue :: proc(s: ^Story) -> string {
@@ -38,24 +38,34 @@ story_continue :: proc(s: ^Story) -> string {
 
 	b := strings.builder_make()
 
-	collect(&b, s.root)
+	c := s.root
+	if len(s.index_path) == 0 {
+		append(&s.index_path, 0)
+		append(&s.index_path, 0)
+	}
 
-	s.can_continue = false
+	for i in s.index_path[:len(s.index_path) - 1] {
+		c = c[i].(Container)
+	}
+
+	process_container(&b, c, &s.index_path, len(s.index_path) - 1)
 
 	return strings.to_string(b)
 }
 
-collect :: proc(b: ^strings.Builder, c: Container) {
-	for e in c {
-		switch v in e {
-		case Container:
-			collect(b, v)
-		case string:
-			strings.write_string(b, v)
+process_container :: proc(b: ^strings.Builder, c: Container, index_path: ^[dynamic]int, i: int) {
+	for index_path[i] < len(c) {
+		e := c[index_path[i]].(string)
+		strings.write_string(b, e)
+		index_path[i] += 1
 
-			if v == "\n" {
-				return
-			}
+		if index_path[i] == len(c) && i > 0 {
+			pop_safe(index_path)
+			index_path[i - 1] += 1
+		}
+
+		if e == "\n" {
+			return
 		}
 	}
 }
