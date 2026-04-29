@@ -41,7 +41,6 @@ story_continue :: proc(s: ^Story) -> string {
 	c := s.root
 	if len(s.index_path) == 0 {
 		append(&s.index_path, 0)
-		append(&s.index_path, 0)
 	}
 
 	for i in s.index_path[:len(s.index_path) - 1] {
@@ -55,6 +54,12 @@ story_continue :: proc(s: ^Story) -> string {
 
 process_container :: proc(b: ^strings.Builder, c: Container, index_path: ^[dynamic]int, i: int) {
 	for index_path[i] < len(c) {
+		if e, ok := c[index_path[i]].(Container); ok {
+			append(index_path, 0)
+			process_container(b, e, index_path, i + 1)
+			break
+		}
+
 		e := c[index_path[i]].(string)
 		strings.write_string(b, e)
 		index_path[i] += 1
