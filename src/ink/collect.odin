@@ -1,51 +1,50 @@
 package ink
 
 import "core:strings"
-collect :: proc(c: Container, path: ^[dynamic]int) -> string {
+collect :: proc(c: Container, idx_path: ^[dynamic]int) -> string {
 	b := strings.builder_make()
 
-	process_container(c, path, &b, 0)
+	process_container(c, idx_path, &b, 0)
 
 	return strings.to_string(b)
 }
 
 process_container :: proc(
 	c: Container,
-	path: ^[dynamic]int,
+	idx_path: ^[dynamic]int,
 	b: ^strings.Builder,
-	deep: int,
+	deep_idx: int,
 ) -> (
 	cont: bool,
 ) {
-	if len(path) > deep + 1 {
-		process_container(c[path[deep]].(Container), path, b, deep + 1) or_return
-	}
+	defer if idx_path[deep_idx] == len(c) {
+		pop_safe(idx_path)
 
-	defer if path[deep] == len(c) {
-		pop_safe(path)
-
-		if deep > 0 {
-			path[deep - 1] += 1
+		if deep_idx > 0 {
+			idx_path[deep_idx - 1] += 1
 		}
 	}
 
-	base := path[deep]
+	if len(idx_path) > deep_idx + 1 {
+		process_container(c[idx_path[deep_idx]].(Container), idx_path, b, deep_idx + 1) or_return
+	}
+
+	base := idx_path[deep_idx]
 	for e, i in c[base:] {
-		if e, ok := e.(Container); ok {
-			append(path, 0)
-			process_container(e, path, b, len(path) - 1)
+		switch v in e {
+		case Container:
+			append(idx_path, 0)
+			process_container(v, idx_path, b, len(idx_path) - 1)
 			continue
-		}
+		case string:
+			strings.write_string(b, e.(string))
+			idx_path[deep_idx] = base + i + 1
 
-		strings.write_string(b, e.(string))
-		path[deep] = base + i + 1
-
-
-		if e.(string) == "\n" {
-			return false
+			if e.(string) == "\n" {
+				return false
+			}
 		}
 	}
-
 
 	return true
 }

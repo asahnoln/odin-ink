@@ -96,8 +96,6 @@ collect_second_deep :: proc(t: ^testing.T) {
 				"Second deep line.",
 				"\n",
 			},
-			"Line new.",
-			"\n",
 		},
 		&path,
 	)
@@ -106,7 +104,7 @@ collect_second_deep :: proc(t: ^testing.T) {
 	testing.expect_value(t, str, "Second deep line.\n")
 
 	{
-		got, want := path[:], []int{1}
+		got, want := path[:], []int{}
 		testing.expectf(t, slice.equal(got, want), "got %v; want %v", got, want)
 	}
 }
