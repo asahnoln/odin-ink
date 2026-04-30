@@ -9,10 +9,24 @@ collect :: proc(c: Container, path: ^[dynamic]int) -> string {
 	return strings.to_string(b)
 }
 
-process_container :: proc(c: Container, path: ^[dynamic]int, b: ^strings.Builder, deep: int) {
+process_container :: proc(
+	c: Container,
+	path: ^[dynamic]int,
+	b: ^strings.Builder,
+	deep: int,
+) -> (
+	cont: bool,
+) {
 	if len(path) > deep + 1 {
-		process_container(c[path[deep]].(Container), path, b, deep + 1)
-		return
+		process_container(c[path[deep]].(Container), path, b, deep + 1) or_return
+	}
+
+	defer if path[deep] == len(c) {
+		pop_safe(path)
+
+		if deep > 0 {
+			path[deep - 1] += 1
+		}
 	}
 
 	base := path[deep]
@@ -20,22 +34,18 @@ process_container :: proc(c: Container, path: ^[dynamic]int, b: ^strings.Builder
 		if e, ok := e.(Container); ok {
 			append(path, 0)
 			process_container(e, path, b, len(path) - 1)
-			break
+			continue
 		}
 
 		strings.write_string(b, e.(string))
 		path[deep] = base + i + 1
 
-		if path[deep] == len(c) {
-			pop_safe(path)
-
-			if deep > 0 {
-				path[deep - 1] += 1
-			}
-		}
 
 		if e.(string) == "\n" {
-			break
+			return false
 		}
 	}
+
+
+	return true
 }
