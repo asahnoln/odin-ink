@@ -40,15 +40,19 @@ story_continue :: proc(s: ^Story) -> string {
 
 	b := strings.builder_make()
 
-	for e in s.root {
+	i := 0
+	main_loop: for e, i in s.root {
 		switch v in e {
 		case Container:
 		case string:
 			strings.write_string(&b, v)
+			if v == "\n" {
+				break main_loop
+			}
 		}
 	}
 
-	s.can_continue = false
+	s.can_continue = find_str(s.root[i + 1:])
 
 	return strings.to_string(b)
 }
