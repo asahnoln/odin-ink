@@ -38,26 +38,36 @@ story_continue :: proc(s: ^Story) -> string {
 
 	b := strings.builder_make()
 
-	c := s.root
 	if len(s.index_path) == 0 {
 		append(&s.index_path, 0)
 	}
 
-	for i in s.index_path[:len(s.index_path) - 1] {
-		c = c[i].(Container)
-	}
+	c := find_container(s.root, s.index_path)
 
 	process_container(&b, c, &s.index_path, len(s.index_path) - 1)
 
 	return strings.to_string(b)
 }
 
+find_container :: proc(c: Container, index_path: [dynamic]int) -> Container {
+	c := c
+
+	for i in index_path[:len(index_path) - 1] {
+		c = c[i].(Container)
+	}
+
+	return c
+}
+
 process_container :: proc(b: ^strings.Builder, c: Container, index_path: ^[dynamic]int, i: int) {
+	c := c
+	i := i
+
 	for index_path[i] < len(c) {
 		if e, ok := c[index_path[i]].(Container); ok {
 			append(index_path, 0)
-			process_container(b, e, index_path, i + 1)
-			break
+			c = find_container(c, index_path^)
+			i += 1
 		}
 
 		e := c[index_path[i]].(string)
