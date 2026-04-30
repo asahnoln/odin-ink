@@ -41,7 +41,11 @@ story_continue :: proc(s: ^Story) -> string {
 	b := strings.builder_make()
 
 	for e in s.root {
-		strings.write_string(&b, e.(string))
+		switch v in e {
+		case Container:
+		case string:
+			strings.write_string(&b, v)
+		}
 	}
 
 	s.can_continue = false
@@ -54,7 +58,9 @@ find_str :: proc(c: Container) -> bool {
 	for e in c {
 		switch v in e {
 		case Container:
-			return find_str(v)
+			if find_str(v) {
+				return true
+			}
 		case string:
 			return true
 		}
