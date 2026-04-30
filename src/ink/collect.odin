@@ -37,10 +37,10 @@ process_container :: proc(
 			process_container(v, idx_path, b, len(idx_path) - 1)
 			continue
 		case string:
-			strings.write_string(b, e.(string))
+			strings.write_string(b, v)
 			idx_path[deep_idx] = base + i + 1
 
-			if e.(string) == "\n" {
+			if v == "\n" {
 				return false
 			}
 		}
