@@ -1,6 +1,7 @@
 package ink
 
 import "core:strings"
+
 Story :: struct {
 	can_continue: bool,
 	root:         Container,
@@ -20,10 +21,11 @@ make_story :: proc {
 
 make_story_from_container :: proc(c: Container) -> Story {
 	s := Story {
-		root = c,
+		root       = c,
+		index_path = make([dynamic]int),
 	}
 
-	s.can_continue = has_string(s.root)
+	s.can_continue = find_str(s.root)
 	return s
 }
 
@@ -38,56 +40,22 @@ story_continue :: proc(s: ^Story) -> string {
 
 	b := strings.builder_make()
 
-	if len(s.index_path) == 0 {
-		append(&s.index_path, 0)
+	for e in s.root {
+		strings.write_string(&b, e.(string))
 	}
 
-	c := find_container(s.root, s.index_path)
-
-	process_container(&b, c, &s.index_path, len(s.index_path) - 1)
+	s.can_continue = false
 
 	return strings.to_string(b)
 }
 
-find_container :: proc(c: Container, index_path: [dynamic]int) -> Container {
-	c := c
-
-	for i in index_path[:len(index_path) - 1] {
-		c = c[i].(Container)
-	}
-
-	return c
-}
-
-process_container :: proc(b: ^strings.Builder, c: Container, index_path: ^[dynamic]int, i: int) {
-	c := c
-	i := i
-
-	for index_path[i] < len(c) {
-		if e, ok := c[index_path[i]].(Container); ok {
-			append(index_path, 0)
-			c = find_container(c, index_path^)
-			i += 1
-		}
-
-		e := c[index_path[i]].(string)
-		strings.write_string(b, e)
-		index_path[i] += 1
-
-		if index_path[i] == len(c) && i > 0 {
-			pop_safe(index_path)
-			index_path[i - 1] += 1
-		}
-
-		if e == "\n" {
-			return
-		}
-	}
-}
-
-has_string :: proc(c: Container) -> bool {
+@(private)
+find_str :: proc(c: Container) -> bool {
 	for e in c {
-		if _, ok := e.(string); ok {
+		switch v in e {
+		case Container:
+			return find_str(v)
+		case string:
 			return true
 		}
 	}
