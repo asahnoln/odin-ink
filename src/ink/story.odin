@@ -5,7 +5,7 @@ import "core:strings"
 Story :: struct {
 	can_continue: bool,
 	root:         Container,
-	index_path:   [dynamic]int,
+	idx_path:     [dynamic]int,
 }
 
 Element :: union {
@@ -21,38 +21,42 @@ make_story :: proc {
 
 make_story_from_container :: proc(c: Container) -> Story {
 	s := Story {
-		root       = c,
-		index_path = make([dynamic]int),
+		root     = c,
+		idx_path = make([dynamic]int),
 	}
 
-	s.can_continue = find_str(s.root)
+	append(&s.idx_path, 0)
+	s.can_continue = has_next_str(c, s.idx_path[:])
 	return s
 }
 
 destroy_story :: proc(s: ^Story) {
-	delete(s.index_path)
+	delete(s.idx_path)
 }
 
 story_continue :: proc(s: ^Story) -> string {
-	if !s.can_continue {
-		return ""
-	}
-
 	b := strings.builder_make()
 
-	i := 0
-	main_loop: for e, i in s.root {
-		switch v in e {
-		case Container:
-		case string:
-			strings.write_string(&b, v)
-			if v == "\n" {
-				break main_loop
-			}
-		}
-	}
+	traverse_container(
+		s.root,
+		&s.idx_path,
+		0,
+		&b,
+		proc(e: Element, data: ^strings.Builder) -> (cont: bool) {
+			if str, ok := e.(string); ok {
+				b := data
+				strings.write_string(b, str)
 
-	s.can_continue = find_str(s.root[i + 1:])
+				if str == "\n" {
+					return false
+				}
+			}
+
+			return true
+		},
+	)
+
+	s.can_continue = has_next_str(s.root, s.idx_path[:])
 
 	return strings.to_string(b)
 }
