@@ -11,9 +11,14 @@ Story :: struct {
 Element :: union {
 	Container,
 	string,
+	Cmd,
 }
 
 Container :: distinct []Element
+
+Cmd :: enum {
+	Done,
+}
 
 make_story :: proc {
 	make_story_from_container,
@@ -63,20 +68,4 @@ story_continue :: proc(s: ^Story) -> string {
 	s.can_continue = has_next_str(s.root, s.idx_path[:])
 
 	return strings.to_string(b)
-}
-
-@(private)
-find_str :: proc(c: Container) -> bool {
-	for e in c {
-		switch v in e {
-		case Container:
-			if find_str(v) {
-				return true
-			}
-		case string:
-			return true
-		}
-	}
-
-	return false
 }

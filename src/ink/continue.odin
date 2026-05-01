@@ -1,5 +1,6 @@
 package ink
 
+import "core:log"
 has_next_str :: proc(c: Container, idx_path: []int) -> bool {
 	if len(idx_path) == 0 {
 		return false
@@ -12,16 +13,20 @@ has_next_str :: proc(c: Container, idx_path: []int) -> bool {
 		append(&idx_path_dyn, i)
 	}
 
-	return(
-		!traverse_container(
-			c,
-			&idx_path_dyn,
-			0,
-			struct{}{},
-			proc(e: Element, data: struct{}) -> (cont: bool) {
-				str, ok := e.(string)
-				return !ok
-			},
-		) \
-	)
+	done: bool
+	return !traverse_container(
+		c,
+		&idx_path_dyn,
+		0,
+		&done,
+		proc(e: Element, done: ^bool) -> (cont: bool) {
+			if cmd, ok := e.(Cmd); ok && cmd == .Done {
+				done^ = true
+			}
+
+			// NOTE: Works while there's only one type of Element - string
+			// TODO: Check for string
+			return false
+		},
+		) && !done
 }
