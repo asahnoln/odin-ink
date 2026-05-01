@@ -5,7 +5,7 @@ import "core:log"
 import "src:ink"
 
 main :: proc() {
-	s, err := ink.story_make(#load("../../tests/ink/testdata/two_lines.json"))
+	s, err := ink.make_story(#load("../../tests/ink/testdata/two_lines.json"))
 	if err != nil {
 		log.fatalf("story make err: %v", err)
 	}

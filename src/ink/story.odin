@@ -1,5 +1,6 @@
 package ink
 
+import "core:encoding/json"
 import "core:strings"
 
 Story :: struct {
@@ -22,6 +23,15 @@ Cmd :: enum {
 
 make_story :: proc {
 	make_story_from_container,
+	make_story_from_json,
+}
+
+make_story_from_json :: proc(json_data: []byte) -> (s: Story, err: json.Error) {
+	j := json.parse(json_data) or_return
+	defer json.destroy_value(j)
+
+	c := convert_json(j.(json.Object)["root"])
+	return make_story(c.(Container)), nil
 }
 
 make_story_from_container :: proc(c: Container) -> Story {

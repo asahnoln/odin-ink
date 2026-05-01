@@ -1,6 +1,5 @@
 package ink
 
-import "core:log"
 has_next_str :: proc(c: Container, idx_path: []int) -> bool {
 	if len(idx_path) == 0 {
 		return false
