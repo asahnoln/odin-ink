@@ -6,11 +6,11 @@ Adapt original Ink API
 
 ```odin
 // 1) Load story
-story := ink.load(source_json_string);
+story := ink.make_story(source_json_bytes);
 
 // 2) Game content, line by line
 for story.can_continue {
-    fmt.println(ink.continue(&story));
+    fmt.println(ink.story_continue(&story));
 }
 
 // 3) Display story.current_choices list, allow player to choose one
@@ -20,10 +20,8 @@ ink.choose_choice_index(&story, 0);
 
 ## TODO
 
-- [ ] Parse different objects into different types (not just `map[string]Element`)
-- [ ] Parse JSON into internal story structure with own types
-- [ ] Apply choice elements to story from its stack
-- [ ] story_continue goes through story and builds current_text and current_choices
+- [ ] Parse different JSON objects into different types
+- [ ] Apply choice elements
 
 ## Technical details
 
