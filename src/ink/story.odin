@@ -4,9 +4,11 @@ import "core:encoding/json"
 import "core:strings"
 
 Story :: struct {
-	can_continue: bool,
-	root:         Container,
-	idx_path:     [dynamic]int,
+	can_continue:   bool,
+	root:           Container,
+	idx_path:       [dynamic]int,
+	// TODO: Figure it if I can check whehter root is heap allocated
+	root_allocated: bool,
 }
 
 Element :: union {
@@ -31,7 +33,10 @@ make_story_from_json :: proc(json_data: []byte) -> (s: Story, err: json.Error) {
 	defer json.destroy_value(j)
 
 	c := convert_json(j.(json.Object)["root"])
-	return make_story(c.(Container)), nil
+	s = make_story(c.(Container))
+	s.root_allocated = true
+
+	return s, nil
 }
 
 make_story_from_container :: proc(c: Container) -> Story {
@@ -47,6 +52,9 @@ make_story_from_container :: proc(c: Container) -> Story {
 
 destroy_story :: proc(s: ^Story) {
 	delete(s.idx_path)
+	if s.root_allocated {
+		destroy_element(s.root)
+	}
 }
 
 story_continue :: proc(s: ^Story) -> string {

@@ -7,8 +7,6 @@ import "src:ink"
 make_story_from_json :: proc(t: ^testing.T) {
 	s, err := ink.make_story(#load("testdata/two_lines.json"))
 	defer ink.destroy_story(&s)
-	// TODO: Think on destroying it in story
-	defer ink.destroy_element(s.root)
 
 	if !testing.expect_value(t, err, nil) {
 		return
