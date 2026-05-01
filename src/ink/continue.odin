@@ -8,17 +8,20 @@ has_next_str :: proc(c: Container, idx_path: []int) -> bool {
 		append(&idx_path_dyn, i)
 	}
 
-	return !traverse_container(c, &idx_path_dyn, 0, proc(e: Element) -> (cont: bool) {
+	return(
+		!traverse_container(c, &idx_path_dyn, 0, proc(e: Element, data: struct{}) -> (cont: bool) {
 			str, ok := e.(string)
 			return !ok
-		})
+		}, struct{}{}) \
+	)
 }
 
 traverse_container :: proc(
 	c: Container,
 	idx_path: ^[dynamic]int,
 	deep_idx: int,
-	callback: proc(e: Element) -> (cont: bool),
+	callback: proc(e: Element, data: $T) -> (cont: bool),
+	data: T,
 ) -> (
 	cont: bool,
 ) {
@@ -36,6 +39,7 @@ traverse_container :: proc(
 			idx_path,
 			deep_idx + 1,
 			callback,
+			data,
 		) or_return
 	}
 
@@ -43,13 +47,13 @@ traverse_container :: proc(
 	for e, i in c[base:] {
 		if cntr, ok := e.(Container); ok {
 			append(idx_path, 0)
-			traverse_container(cntr, idx_path, len(idx_path) - 1, callback)
+			traverse_container(cntr, idx_path, len(idx_path) - 1, callback, data)
 			continue
 		}
 
 		idx_path[deep_idx] = base + i + 1
 
-		callback(e) or_return
+		callback(e, data) or_return
 	}
 
 	return true
