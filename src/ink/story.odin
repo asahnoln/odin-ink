@@ -35,6 +35,10 @@ destroy_story :: proc(s: ^Story) {
 }
 
 story_continue :: proc(s: ^Story) -> string {
+	if !s.can_continue {
+		return ""
+	}
+
 	b := strings.builder_make()
 
 	traverse_container(
