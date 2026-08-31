@@ -1,8 +1,8 @@
 package ink
 
-import "core:log"
 import "core:strconv"
 import "core:strings"
+
 Element :: union {
 	Container,
 	Container_Info,
@@ -68,8 +68,10 @@ Story :: struct {
 	str_builder:     strings.Builder,
 	stack:           [dynamic]string,
 	mode:            Mode,
-	_last_index:     Maybe(uint),
+	idx_path:        [dynamic]string,
 }
+
+IDX_PATH_SEP :: "."
 
 story_make :: proc {
 	story_make_empty,
@@ -77,36 +79,52 @@ story_make :: proc {
 }
 
 story_make_empty :: proc() -> Story {
-	return {}
+	return {
+		str_builder = strings.builder_make(),
+		current_choices = make([dynamic]Choice),
+		stack = make([dynamic]string),
+		idx_path = make([dynamic]string),
+	}
 }
 
 story_make_from_struct :: proc(c: Container) -> Story {
-	return {root = c, str_builder = strings.builder_make()}
+	s := story_make_empty()
+	s.root = c
+	return s
 }
 
 story_destroy :: proc(s: ^Story) {
 	delete(s.current_choices)
 	delete(s.stack)
+	delete(s.idx_path)
 	strings.builder_destroy(&s.str_builder)
 }
 
 story_continue :: proc(s: ^Story) -> string {
-	if _, ok := s._last_index.?; !ok {
-		_process_container(s, s.root)
-	} else {
-		p := strings.split(s.current_choices[0].path, ".")
-		defer delete(p)
+	c := s.root
+	for idx in s.idx_path {
+		i, ok := strconv.parse_uint(idx)
+		if !ok {
+			c = c[len(c) - 1].(Container_Info).subs[idx]
+			continue
+		}
 
-		i, _ := strconv.parse_uint(p[0])
-		c := s.root[i].(Container)
-		_process_container(s, c[len(c) - 1].(Container_Info).subs[p[1]])
+		c = c[i].(Container)
 	}
+
+	_process_container(s, c)
 
 	return strings.to_string(s.str_builder)
 }
 
 choose_choice_index :: proc(s: ^Story, i: uint) {
-	s._last_index = i
+	p := strings.split(s.current_choices[i].path, IDX_PATH_SEP)
+	defer delete(p)
+
+	resize(&s.current_choices, 0)
+	resize(&s.idx_path, 0)
+
+	append(&s.idx_path, ..p)
 }
 
 _process_container :: proc(s: ^Story, c: Container) -> (cont: bool) {
