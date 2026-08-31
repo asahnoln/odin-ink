@@ -1,45 +1,34 @@
 package ink_test
 
-import "core:strings"
 import "core:testing"
 import "src:ink"
 
 @(test)
-make_story_from_json :: proc(t: ^testing.T) {
-	s, err := ink.story_make(#load("testdata/one_line_of_text.json"))
-	if !testing.expect_value(t, err, nil) {
-		return
-	}
-	defer ink.story_destroy(&s)
+empty :: proc(t: ^testing.T) {
+	s := ink.story_make()
 
-	testing.expect_value(
-		t,
-		s.root.([]ink.Element)[0].([]ink.Element)[0].(string),
-		"One line of text.",
-	)
+	got := ink.story_continue(&s)
+	testing.expect_value(t, got, "")
 }
 
 @(test)
-continue_text :: proc(t: ^testing.T) {
-	s, err := ink.story_make(#load("testdata/two_lines.json"))
-	if !testing.expect_value(t, err, nil) {
-		return
-	}
-	defer ink.story_destroy(&s)
+hello_world :: proc(t: ^testing.T) {
+	s := ink.story_make(
+		ink.Container {
+			ink.Container {
+				"Hello, world!",
+				"\n",
+				ink.Container {
+					.Done,
+					ink.Container_Info{flags = {.Visits, .Count_Start_Only}, name = "g-0"},
+				},
+				nil,
+			},
+			.Done,
+			ink.Container_Info{flags = {.Visits}},
+		},
+	)
 
-	testing.expect_value(t, s.can_continue, true)
-
-	l := ink.story_continue(&s)
-	testing.expect_value(t, l, "One line.\n")
-	testing.expect_value(t, s.can_continue, true)
-	delete(l)
-
-	l = ink.story_continue(&s)
-	testing.expect_value(t, l, "Second line.\n")
-	testing.expect_value(t, s.can_continue, false)
-	delete(l)
-
-	l = ink.story_continue(&s)
-	testing.expect_value(t, l, "")
-	testing.expect_value(t, s.can_continue, false)
+	got := ink.story_continue(&s)
+	testing.expect_value(t, got, "Hello, world!\n")
 }

@@ -2,9 +2,7 @@
   "inkVersion": 21,
   "root": [
     [
-      "^One line.",
-      "\n",
-      "^Second line.",
+      "^Hello, world!",
       "\n",
       [
         "done",
