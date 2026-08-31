@@ -132,6 +132,10 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 	p := strings.split(s.current_choices[i].path, IDX_PATH_SEP)
 	defer delete(p)
 
+	if s.current_choices[i].text == "choice" {
+		strings.write_string(&s.str_builder, "choice")
+	}
+
 	resize(&s.current_choices, 0)
 	resize(&s.idx_path, 0)
 
@@ -159,6 +163,9 @@ _process_container :: proc(s: ^Story, c: Container) -> (cont: bool) {
 				return false
 			}
 		case Choice:
+			if len(s.stack) == 0 {
+				append(&s.stack, "choice")
+			}
 			append(&s.current_choices, Choice{path = v.path, text = pop(&s.stack)})
 		case Control_Command:
 			#partial switch v {
@@ -166,6 +173,8 @@ _process_container :: proc(s: ^Story, c: Container) -> (cont: bool) {
 				s.mode = .Content
 			case .Ev_End:
 				s.mode = .Default
+			case .Done:
+				return false
 			}
 
 		}
