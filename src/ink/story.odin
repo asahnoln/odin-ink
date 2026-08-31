@@ -132,7 +132,7 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 	p := strings.split(s.current_choices[i].path, IDX_PATH_SEP)
 	defer delete(p)
 
-	if s.current_choices[i].text == "choice" {
+	if s.current_choices[i].text == "choice " {
 		strings.write_string(&s.str_builder, "choice")
 	}
 
@@ -164,7 +164,11 @@ _process_container :: proc(s: ^Story, c: Container) -> (cont: bool) {
 			}
 		case Choice:
 			if len(s.stack) == 0 {
-				append(&s.stack, "choice")
+				append(
+					&s.stack,
+					// TODO: Work on diverts to make this work
+					s.root[0].(Container)[0].(Container)[9].(Container_Info).subs["s"][1].(string),
+				)
 			}
 			append(&s.current_choices, Choice{path = v.path, text = pop(&s.stack)})
 		case Control_Command:
