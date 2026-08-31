@@ -112,7 +112,7 @@ choice_done :: proc(t: ^testing.T) {
 					ink.Container{ink.Container_Info{name = "$r1"}},
 					.Str_End,
 					.Ev_End,
-					ink.Choice{path = "0.c-0", flag = {.Has_Start_Content, .Once_Only}},
+					ink.Choice{path = "0.c-0", flags = {.Has_Start_Content, .Once_Only}},
 					ink.Container_Info{subs = sub1},
 				},
 				ink.Container_Info{subs = subs},

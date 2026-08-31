@@ -10,6 +10,8 @@ Element :: union {
 	Control_Command,
 	Choice,
 	Divert,
+	Divert_Assign,
+	Temp_Var,
 }
 
 Container :: []Element
@@ -38,6 +40,15 @@ Control_Command :: enum {
 
 Divert :: struct {
 	path: string,
+	var:  bool,
+}
+
+Divert_Assign :: struct {
+	path: string,
+}
+
+Temp_Var :: struct {
+	name: string,
 }
 
 Choice_Flag :: enum {
