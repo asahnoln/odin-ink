@@ -114,19 +114,7 @@ story_destroy :: proc(s: ^Story) {
 }
 
 story_continue :: proc(s: ^Story) -> string {
-	c := s.root
-	// for idx in s.idx_path {
-	// 	i, ok := strconv.parse_uint(idx)
-	// 	// TODO: Sometimes we'll need to find container by its name in an arbitrary position
-	// 	if !ok {
-	// 		c = c[len(c) - 1].(Container_Info).subs[idx]
-	// 		continue
-	// 	}
-	//
-	// 	c = c[i].(Container)
-	// }
-
-	_process_container(s, c)
+	_process_container(s, s.root)
 
 	return strings.to_string(s.str_builder)
 }
@@ -202,13 +190,13 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				resize(&s.idx_path, len(s.idx_path) - idx_path_resize + 1)
 				append(&s.idx_path, ..p[idx_path_resize:])
 
-				story_continue(s)
+				_process_container(s, s.root)
 			}
 			if v.path == "$r" {
 				resize(&s.idx_path, 0)
 				append(&s.idx_path, "0", "0", "5")
 
-				story_continue(s)
+				_process_container(s, s.root)
 			}
 
 			return false
