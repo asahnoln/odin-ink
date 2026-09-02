@@ -1,5 +1,6 @@
 package ink
 
+import "core:slice"
 import "core:strconv"
 import "core:strings"
 
@@ -80,7 +81,7 @@ Story :: struct {
 	stack:           [dynamic]string,
 	mode:            Mode,
 	idx_path:        [dynamic]string,
-	_el_idx_from:    uint,
+	_el_idx_from:    int,
 }
 
 IDX_PATH_SEP :: "."
@@ -146,10 +147,12 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 	append(&s.idx_path, ..p)
 }
 
-_process_container :: proc(s: ^Story, c: Container, el_idx_from: uint = 0) -> (cont: bool) {
-	for e in c[el_idx_from:] {
+_process_container :: proc(s: ^Story, c: Container, el_idx_from: int = 0) -> (cont: bool) {
+	for e, i in c[el_idx_from:] {
 		#partial switch v in e {
 		case Container:
+			b: [4]byte
+			append(&s.idx_path, strconv.write_int(b[:], cast(i64)i, 10))
 			_process_container(s, v) or_return
 		case string:
 			if s.mode == .Content {
@@ -178,9 +181,14 @@ _process_container :: proc(s: ^Story, c: Container, el_idx_from: uint = 0) -> (c
 				return false
 			}
 		case Divert:
-			if v.path == ".^.s" {
-				resize(&s.idx_path, 0)
-				append(&s.idx_path, "0", "0", "s")
+			if v.path[0] == '.' {
+				p := strings.split(v.path[1:], IDX_PATH_SEP)
+				defer delete(p)
+
+				idx_path_resize := slice.count(p, "^")
+
+				resize(&s.idx_path, len(s.idx_path) - idx_path_resize + 1)
+				append(&s.idx_path, ..p[idx_path_resize:])
 
 				story_continue(s)
 			}
