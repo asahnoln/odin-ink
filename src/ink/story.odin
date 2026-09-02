@@ -80,6 +80,7 @@ Story :: struct {
 	stack:           [dynamic]string,
 	mode:            Mode,
 	idx_path:        [dynamic]string,
+	_el_idx_from:    uint,
 }
 
 IDX_PATH_SEP :: "."
@@ -115,6 +116,7 @@ story_continue :: proc(s: ^Story) -> string {
 	c := s.root
 	for idx in s.idx_path {
 		i, ok := strconv.parse_uint(idx)
+		// TODO: Sometimes we'll need to find container by its name in an arbitrary position
 		if !ok {
 			c = c[len(c) - 1].(Container_Info).subs[idx]
 			continue
@@ -123,7 +125,8 @@ story_continue :: proc(s: ^Story) -> string {
 		c = c[i].(Container)
 	}
 
-	_process_container(s, c)
+	_process_container(s, c, s._el_idx_from)
+	s._el_idx_from = 0
 
 	return strings.to_string(s.str_builder)
 }
@@ -132,6 +135,7 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 	p := strings.split(s.current_choices[i].path, IDX_PATH_SEP)
 	defer delete(p)
 
+	// TODO: Work on diverts to gather final text for output
 	if s.current_choices[i].text == "choice " {
 		strings.write_string(&s.str_builder, "choice")
 	}
@@ -142,8 +146,8 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 	append(&s.idx_path, ..p)
 }
 
-_process_container :: proc(s: ^Story, c: Container) -> (cont: bool) {
-	for e in c {
+_process_container :: proc(s: ^Story, c: Container, el_idx_from: uint = 0) -> (cont: bool) {
+	for e in c[el_idx_from:] {
 		#partial switch v in e {
 		case Container:
 			_process_container(s, v) or_return
@@ -163,13 +167,6 @@ _process_container :: proc(s: ^Story, c: Container) -> (cont: bool) {
 				return false
 			}
 		case Choice:
-			if len(s.stack) == 0 {
-				append(
-					&s.stack,
-					// TODO: Work on diverts to make this work
-					s.root[0].(Container)[0].(Container)[9].(Container_Info).subs["s"][1].(string),
-				)
-			}
 			append(&s.current_choices, Choice{path = v.path, text = pop(&s.stack)})
 		case Control_Command:
 			#partial switch v {
@@ -180,7 +177,22 @@ _process_container :: proc(s: ^Story, c: Container) -> (cont: bool) {
 			case .Done:
 				return false
 			}
+		case Divert:
+			if v.path == ".^.s" {
+				resize(&s.idx_path, 0)
+				append(&s.idx_path, "0", "0", "s")
 
+				story_continue(s)
+			}
+			if v.path == "$r" {
+				resize(&s.idx_path, 0)
+				append(&s.idx_path, "0", "0")
+				s._el_idx_from = 5
+
+				story_continue(s)
+			}
+
+			return false
 		}
 
 	}
