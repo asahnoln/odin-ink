@@ -193,8 +193,30 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				_process_container(s, s.root)
 			}
 			if v.path == "$r" {
+				idx: int
+				for e, i in s.root[0].(Container)[0].(Container) {
+					c: Container
+					ok: bool
+
+					if c, ok = e.(Container); !ok {
+						continue
+					}
+
+					info: Container_Info
+					// FIX: Just for test to remind where to look at
+					if info, ok = c[len(c) - 2].(Container_Info); !ok {
+						continue
+					}
+
+					if info.name == "TODO: FIND WHERE $r1 COMES FROM" {
+						idx = i
+						break
+					}
+				}
+
+				buf: [4]byte
 				resize(&s.idx_path, 0)
-				append(&s.idx_path, "0", "0", "5")
+				append(&s.idx_path, "0", "0", strconv.write_int(buf[:], cast(i64)idx, 10))
 
 				_process_container(s, s.root)
 			}
