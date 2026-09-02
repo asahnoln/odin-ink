@@ -115,19 +115,18 @@ story_destroy :: proc(s: ^Story) {
 
 story_continue :: proc(s: ^Story) -> string {
 	c := s.root
-	for idx in s.idx_path {
-		i, ok := strconv.parse_uint(idx)
-		// TODO: Sometimes we'll need to find container by its name in an arbitrary position
-		if !ok {
-			c = c[len(c) - 1].(Container_Info).subs[idx]
-			continue
-		}
+	// for idx in s.idx_path {
+	// 	i, ok := strconv.parse_uint(idx)
+	// 	// TODO: Sometimes we'll need to find container by its name in an arbitrary position
+	// 	if !ok {
+	// 		c = c[len(c) - 1].(Container_Info).subs[idx]
+	// 		continue
+	// 	}
+	//
+	// 	c = c[i].(Container)
+	// }
 
-		c = c[i].(Container)
-	}
-
-	_process_container(s, c, s._el_idx_from)
-	s._el_idx_from = 0
+	_process_container(s, c)
 
 	return strings.to_string(s.str_builder)
 }
@@ -147,13 +146,26 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 	append(&s.idx_path, ..p)
 }
 
-_process_container :: proc(s: ^Story, c: Container, el_idx_from: int = 0) -> (cont: bool) {
-	for e, i in c[el_idx_from:] {
+_process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bool) {
+	c := c
+	from := 0
+	if len(s.idx_path) > depth {
+		idx := s.idx_path[depth]
+		ok: bool
+		from, ok = strconv.parse_int(idx, 10)
+		if !ok {
+			c = c[len(c) - 1].(Container_Info).subs[idx]
+		}
+	}
+
+	for e, i in c[from:] {
 		#partial switch v in e {
 		case Container:
+			// TODO: Bytes lost - string will contain garbage
+			// TODO: Redundant append when idx alread in the path
 			b: [4]byte
 			append(&s.idx_path, strconv.write_int(b[:], cast(i64)i, 10))
-			_process_container(s, v) or_return
+			_process_container(s, v, depth + 1) or_return
 		case string:
 			if s.mode == .Content {
 				append(&s.stack, v)
@@ -194,8 +206,7 @@ _process_container :: proc(s: ^Story, c: Container, el_idx_from: int = 0) -> (co
 			}
 			if v.path == "$r" {
 				resize(&s.idx_path, 0)
-				append(&s.idx_path, "0", "0")
-				s._el_idx_from = 5
+				append(&s.idx_path, "0", "0", "5")
 
 				story_continue(s)
 			}
