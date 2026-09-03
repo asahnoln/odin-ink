@@ -89,9 +89,12 @@ Story :: struct {
 	stack:           [dynamic]string,
 	mode:            Mode,
 	idx_path:        Idx_Path,
+	vars:            map[string]string,
 }
 
 IDX_PATH_SEP :: "."
+REL_PATH_START :: '.'
+REL_PATH_PARENT :: "^"
 
 story_make :: proc {
 	story_make_empty,
@@ -104,6 +107,7 @@ story_make_empty :: proc() -> Story {
 		current_choices = make([dynamic]Choice),
 		stack = make([dynamic]string),
 		idx_path = make(Idx_Path),
+		vars = make(map[string]string),
 	}
 }
 
@@ -117,6 +121,7 @@ story_destroy :: proc(s: ^Story) {
 	delete(s.current_choices)
 	delete(s.stack)
 	delete(s.idx_path)
+	delete(s.vars)
 	strings.builder_destroy(&s.str_builder)
 }
 
@@ -139,14 +144,14 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 
 _convert_path :: proc(path: string, idxs: ^Idx_Path) {
 	p_idx := 0
-	if path[0] == '.' {
+	if path[0] == REL_PATH_START {
 		p_idx = 1
 	}
 
 	p := strings.split(path[p_idx:], IDX_PATH_SEP)
 	defer delete(p)
 
-	idx_path_resize := slice.count(p, "^")
+	idx_path_resize := slice.count(p, REL_PATH_PARENT)
 
 	resize(idxs, 0 if idx_path_resize == 0 else len(idxs) - idx_path_resize + 1)
 
@@ -237,22 +242,19 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				return false
 			}
 		case Divert:
-			// TODO: Make one universal resolve
-			if v.path[0] == '.' {
-				_convert_path(v.path, &s.idx_path)
+			p := v.path if !v.var else s.vars[v.path]
 
-				// TODO: Move one level up
-				_process_container(s, s.root)
-			}
-			if v.path == "$r" {
-				r := "0.0.$r1"
+			_convert_path(p, &s.idx_path)
 
-				_convert_path(r, &s.idx_path)
-
-				_process_container(s, s.root)
-			}
+			_process_container(s, s.root)
 
 			return false
+		case Temp_Var:
+			// TODO: Check story mode
+			s.vars[v.name] = pop(&s.stack)
+		case Divert_Assign:
+			// TODO: Check story mode?
+			append(&s.stack, v.path)
 		}
 
 	}
