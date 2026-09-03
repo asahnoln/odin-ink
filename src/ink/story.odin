@@ -8,6 +8,7 @@ Element :: union {
 	Container,
 	Container_Info,
 	string,
+	f64,
 	Control_Command,
 	Choice,
 	Divert,
