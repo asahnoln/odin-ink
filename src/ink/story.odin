@@ -75,7 +75,7 @@ Mode :: enum {
 	Content,
 }
 
-Idx :: union {
+Idx :: union #no_nil {
 	int,
 	string,
 }
@@ -138,12 +138,19 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 }
 
 _convert_path :: proc(path: string, idxs: ^Idx_Path) {
-	p := strings.split(path, IDX_PATH_SEP)
+	p_idx := 0
+	if path[0] == '.' {
+		p_idx = 1
+	}
+
+	p := strings.split(path[p_idx:], IDX_PATH_SEP)
 	defer delete(p)
 
-	resize(idxs, 0)
+	idx_path_resize := slice.count(p, "^")
 
-	for i in p {
+	resize(idxs, 0 if idx_path_resize == 0 else len(idxs) - idx_path_resize + 1)
+
+	for i in p[idx_path_resize:] {
 		iu: Idx
 		ix, ok := strconv.parse_int(i, 10)
 		iu = ix if ok else i
@@ -232,20 +239,7 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 		case Divert:
 			// TODO: Make one universal resolve
 			if v.path[0] == '.' {
-				p := strings.split(v.path[1:], IDX_PATH_SEP)
-				defer delete(p)
-
-				idx_path_resize := slice.count(p, "^")
-
-				resize(&s.idx_path, len(s.idx_path) - idx_path_resize + 1)
-				for i in p[idx_path_resize:] {
-					ix, ok := strconv.parse_int(i, 10)
-					if ok {
-						append(&s.idx_path, ix)
-					} else {
-						append(&s.idx_path, i)
-					}
-				}
+				_convert_path(v.path, &s.idx_path)
 
 				// TODO: Move one level up
 				_process_container(s, s.root)
