@@ -2,16 +2,17 @@
 package ink_test
 
 import "core:encoding/json"
+import "core:strings"
 import "core:testing"
 import "src:ink"
 
 @(test)
 convert_container :: proc(t: ^testing.T) {
 	arrs := json.Array{json.Array{10}}
-	defer json.destroy_value(arrs)
 
 	got := ink.json_convert(arrs)
 	defer ink.destroy_element(got)
+	json.destroy_value(arrs)
 
 	want := ink.Container{ink.Container{}}
 	testing.expectf(t, len(got.(ink.Container)) == len(want), "got %w; want %w")
@@ -20,8 +21,10 @@ convert_container :: proc(t: ^testing.T) {
 
 @(test)
 convert_string :: proc(t: ^testing.T) {
-	got := ink.json_convert("^Hey!")
+	s := strings.clone("^Hey!")
+	got := ink.json_convert(s)
 	defer ink.destroy_element(got)
+	delete(s)
 
 	testing.expect_value(t, got.(string), "Hey!")
 }
@@ -48,7 +51,31 @@ convert_command :: proc(t: ^testing.T) {
 		got, _ := el.(ink.Control_Command)
 		testing.expectf(t, got == tt.want, "for command %q: got %v; want %v", tt.cmd, el, tt.want)
 	}
+}
 
+@(test)
+convert_divert_from_var :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"->"  = "$r",
+		"var" = true,
+	}
+	got := ink.json_convert(obj)
+	defer ink.destroy_element(got)
+	delete(obj)
+
+	testing.expect_value(t, got.(ink.Divert), ink.Divert{path = "$r", var = true})
+}
+
+@(test)
+convert_divert :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"->" = "0.0.s",
+	}
+	got := ink.json_convert(obj)
+	defer ink.destroy_element(got)
+	delete(obj)
+
+	testing.expect_value(t, got.(ink.Divert), ink.Divert{path = "0.0.s"})
 }
 
 // convert_choice_done :: proc(t: ^testing.T) {

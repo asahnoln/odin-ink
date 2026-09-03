@@ -31,7 +31,10 @@ json_convert :: proc(j: json.Value) -> Element {
 		case "/ev":
 			return .Ev_End
 		}
-
+	case json.Object:
+		if p, ok := val["->"]; ok {
+			return Divert{path = strings.clone(p.(string)), var = val["var"].(bool) or_else false}
+		}
 	}
 
 	return nil
@@ -47,5 +50,7 @@ destroy_element :: proc(el: Element) {
 		delete(v)
 	case string:
 		delete(v)
+	case Divert:
+		delete(v.path)
 	}
 }
