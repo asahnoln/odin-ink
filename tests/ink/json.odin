@@ -18,6 +18,14 @@ convert_container :: proc(t: ^testing.T) {
 	testing.expect_value(t, got.(ink.Container)[0].(ink.Container)[0].(f64), 10)
 }
 
+@(test)
+convert_string :: proc(t: ^testing.T) {
+	got := ink.json_convert("^Hey!")
+	defer ink.destroy_element(got)
+
+	testing.expect_value(t, got.(string), "Hey!")
+}
+
 // convert_choice_done :: proc(t: ^testing.T) {
 // 	s := ink.story_make_from_json(#load("testdata/choice_done.json"))
 //

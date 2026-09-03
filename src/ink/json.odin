@@ -1,6 +1,7 @@
 package ink
 
 import "core:encoding/json"
+import "core:strings"
 
 json_convert :: proc(j: json.Value) -> Element {
 	#partial switch val in j {
@@ -13,6 +14,10 @@ json_convert :: proc(j: json.Value) -> Element {
 		return c
 	case json.Integer:
 		return f64(val)
+	case json.String:
+		s := strings.clone(val[1:])
+
+		return s
 	}
 
 	return nil
@@ -25,6 +30,8 @@ destroy_element :: proc(el: Element) {
 			destroy_element(e)
 		}
 
+		delete(v)
+	case string:
 		delete(v)
 	}
 }
