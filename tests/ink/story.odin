@@ -129,11 +129,11 @@ choice_done :: proc(t: ^testing.T) {
 
 	testing.expect_value(t, len(s.current_choices), 1)
 
-	// ink.choose_choice_index(&s, 0)
-	//
-	// got := ink.story_continue(&s)
-	// want := "choice"
-	// testing.expectf(t, got == want, "got %q; want %q", got, want)
+	ink.choose_choice_index(&s, 0)
+
+	got := ink.story_continue(&s)
+	want := "choice"
+	testing.expectf(t, got == want, "got %q; want %q", got, want)
 }
 
 

@@ -1,6 +1,5 @@
 package ink
 
-import "core:log"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
@@ -134,11 +133,6 @@ story_continue :: proc(s: ^Story) -> string {
 choose_choice_index :: proc(s: ^Story, i: uint) {
 	_convert_path(s.current_choices[0].path, &s.idx_path)
 
-	// TODO: Work on diverts to gather final text for output
-	if s.current_choices[i].text == "choice " {
-		strings.write_string(&s.str_builder, "choice")
-	}
-
 	resize(&s.current_choices, 0)
 }
 
@@ -175,7 +169,19 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 			cnt, ok = c[len(c) - 1].(Container_Info).subs[idx.(string)]
 
 			if ok {
-				c = cnt
+				if depth >= len(s.idx_path) {
+					append(&s.idx_path, idx)
+				}
+
+				defer {
+					if len(s.idx_path) > 0 {
+						pop(&s.idx_path)
+					}
+				}
+
+				_process_container(s, cnt, depth + 1)
+
+				return false
 			} else {
 				for e, i in c {
 					cnt: Container
@@ -221,11 +227,13 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				break
 			}
 
-			if len(s.str_builder.buf) == 0 && strings.trim(v, " \n") == "" {
+			// TODO: Decide where to clean spaces - when added to stack or... ?
+			v_clean := strings.trim(v, " ")
+			if len(s.str_builder.buf) == 0 && strings.trim(v, "\n") == "" {
 				break
 			}
 
-			strings.write_string(&s.str_builder, v)
+			strings.write_string(&s.str_builder, v_clean)
 
 			if v == "\n" {
 				return false
@@ -250,10 +258,8 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 
 			return false
 		case Temp_Var:
-			// TODO: Check story mode
 			s.vars[v.name] = pop(&s.stack)
 		case Divert_Assign:
-			// TODO: Check story mode?
 			append(&s.stack, v.path)
 		}
 
