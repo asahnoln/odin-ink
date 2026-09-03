@@ -33,6 +33,7 @@ Container_Info :: struct {
 }
 
 Control_Command :: enum {
+	Nop,
 	Ev,
 	Str,
 	Str_End,

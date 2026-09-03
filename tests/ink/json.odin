@@ -26,6 +26,31 @@ convert_string :: proc(t: ^testing.T) {
 	testing.expect_value(t, got.(string), "Hey!")
 }
 
+// TODO: What if empty string is ecnountered???
+
+@(test)
+convert_command :: proc(t: ^testing.T) {
+	tests := []struct {
+		cmd:  string,
+		want: ink.Control_Command,
+	} {
+		{"done", .Done}, //
+		{"ev", .Ev},
+		{"/ev", .Ev_End},
+		{"str", .Str},
+		{"/str", .Str_End},
+	}
+
+	for tt in tests {
+		el := ink.json_convert(tt.cmd)
+		defer ink.destroy_element(el)
+
+		got, _ := el.(ink.Control_Command)
+		testing.expectf(t, got == tt.want, "for command %q: got %v; want %v", tt.cmd, el, tt.want)
+	}
+
+}
+
 // convert_choice_done :: proc(t: ^testing.T) {
 // 	s := ink.story_make_from_json(#load("testdata/choice_done.json"))
 //

@@ -15,9 +15,23 @@ json_convert :: proc(j: json.Value) -> Element {
 	case json.Integer:
 		return f64(val)
 	case json.String:
-		s := strings.clone(val[1:])
+		if val[0] == '^' {
+			return strings.clone(val[1:])
+		}
 
-		return s
+		switch val {
+		case "done":
+			return .Done
+		case "str":
+			return .Str
+		case "/str":
+			return .Str_End
+		case "ev":
+			return .Ev
+		case "/ev":
+			return .Ev_End
+		}
+
 	}
 
 	return nil
