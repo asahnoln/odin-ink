@@ -75,16 +75,20 @@ Mode :: enum {
 	Content,
 }
 
+Idx :: union {
+	int,
+	string,
+}
+
+Idx_Path :: [dynamic]Idx
+
 Story :: struct {
 	root:            Container,
 	current_choices: [dynamic]Choice,
 	str_builder:     strings.Builder,
 	stack:           [dynamic]string,
 	mode:            Mode,
-	idx_path:        [dynamic]union {
-		int,
-		string,
-	},
+	idx_path:        Idx_Path,
 }
 
 IDX_PATH_SEP :: "."
@@ -99,10 +103,7 @@ story_make_empty :: proc() -> Story {
 		str_builder = strings.builder_make(),
 		current_choices = make([dynamic]Choice),
 		stack = make([dynamic]string),
-		idx_path = make([dynamic]union {
-				int,
-				string,
-			}),
+		idx_path = make(Idx_Path),
 	}
 }
 
@@ -126,8 +127,7 @@ story_continue :: proc(s: ^Story) -> string {
 }
 
 choose_choice_index :: proc(s: ^Story, i: uint) {
-	p := strings.split(s.current_choices[i].path, IDX_PATH_SEP)
-	defer delete(p)
+	_convert_path(s.current_choices[0].path, &s.idx_path)
 
 	// TODO: Work on diverts to gather final text for output
 	if s.current_choices[i].text == "choice " {
@@ -135,15 +135,19 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 	}
 
 	resize(&s.current_choices, 0)
-	resize(&s.idx_path, 0)
+}
+
+_convert_path :: proc(path: string, idxs: ^Idx_Path) {
+	p := strings.split(path, IDX_PATH_SEP)
+	defer delete(p)
+
+	resize(idxs, 0)
 
 	for i in p {
+		iu: Idx
 		ix, ok := strconv.parse_int(i, 10)
-		if ok {
-			append(&s.idx_path, ix)
-		} else {
-			append(&s.idx_path, i)
-		}
+		iu = ix if ok else i
+		append(idxs, iu)
 	}
 }
 
@@ -248,18 +252,8 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 			}
 			if v.path == "$r" {
 				r := "0.0.$r1"
-				p := strings.split(r, IDX_PATH_SEP)
-				defer delete(p)
 
-				resize(&s.idx_path, 0)
-				for i in p {
-					ix, ok := strconv.parse_int(i, 10)
-					if ok {
-						append(&s.idx_path, ix)
-					} else {
-						append(&s.idx_path, i)
-					}
-				}
+				_convert_path(r, &s.idx_path)
 
 				_process_container(s, s.root)
 			}
