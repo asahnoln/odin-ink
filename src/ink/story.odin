@@ -162,19 +162,20 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				c = cnt
 			} else {
 				for e, i in c {
-					c: Container
+					cnt: Container
 					ok: bool
 
-					if c, ok = e.(Container); !ok {
+					if cnt, ok = e.(Container); !ok {
 						continue
 					}
 
 					info: Container_Info
-					if info, ok = c[len(c) - 1].(Container_Info); !ok {
+					if info, ok = cnt[len(cnt) - 1].(Container_Info); !ok {
 						continue
 					}
 
 					if info.name == idx {
+						from = i
 						break
 					}
 				}
@@ -227,7 +228,6 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 		case Divert:
 			// TODO: Make one universal resolve
 			if v.path[0] == '.' {
-				log.infof("path: %w", s.idx_path[:])
 				p := strings.split(v.path[1:], IDX_PATH_SEP)
 				defer delete(p)
 
@@ -243,30 +243,25 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 					}
 				}
 
-				log.infof("path 2: %w", s.idx_path[:])
-
 				// TODO: Move one level up
 				_process_container(s, s.root)
 			}
 			if v.path == "$r" {
-				append(&s.stack, "choice ")
-				append(&s.current_choices, Choice{path = v.path, text = pop(&s.stack)})
-				// r := "0.0.$r1"
-				// p := strings.split(r, IDX_PATH_SEP)
-				// defer delete(p)
-				//
-				// resize(&s.idx_path, 0)
-				// for i in p {
-				// 	ix, ok := strconv.parse_int(i, 10)
-				// 	if ok {
-				// 		append(&s.idx_path, ix)
-				// 	} else {
-				// 		append(&s.idx_path, i)
-				// 	}
-				// }
-				//
-				// _process_container(s, s.root)
+				r := "0.0.$r1"
+				p := strings.split(r, IDX_PATH_SEP)
+				defer delete(p)
 
+				resize(&s.idx_path, 0)
+				for i in p {
+					ix, ok := strconv.parse_int(i, 10)
+					if ok {
+						append(&s.idx_path, ix)
+					} else {
+						append(&s.idx_path, i)
+					}
+				}
+
+				_process_container(s, s.root)
 			}
 
 			return false

@@ -1,5 +1,6 @@
 package ink_test
 
+import "core:mem"
 import "core:testing"
 import "src:ink"
 
@@ -134,5 +135,6 @@ choice_done :: proc(t: ^testing.T) {
 	// want := "choice"
 	// testing.expectf(t, got == want, "got %q; want %q", got, want)
 }
+
 
 // TODO: Error for choice text from stack
