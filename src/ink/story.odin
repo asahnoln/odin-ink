@@ -1,5 +1,6 @@
 package ink
 
+import "core:log"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
@@ -80,8 +81,10 @@ Story :: struct {
 	str_builder:     strings.Builder,
 	stack:           [dynamic]string,
 	mode:            Mode,
-	idx_path:        [dynamic]string,
-	_el_idx_from:    int,
+	idx_path:        [dynamic]union {
+		int,
+		string,
+	},
 }
 
 IDX_PATH_SEP :: "."
@@ -96,7 +99,10 @@ story_make_empty :: proc() -> Story {
 		str_builder = strings.builder_make(),
 		current_choices = make([dynamic]Choice),
 		stack = make([dynamic]string),
-		idx_path = make([dynamic]string),
+		idx_path = make([dynamic]union {
+				int,
+				string,
+			}),
 	}
 }
 
@@ -131,7 +137,14 @@ choose_choice_index :: proc(s: ^Story, i: uint) {
 	resize(&s.current_choices, 0)
 	resize(&s.idx_path, 0)
 
-	append(&s.idx_path, ..p)
+	for i in p {
+		ix, ok := strconv.parse_int(i, 10)
+		if ok {
+			append(&s.idx_path, ix)
+		} else {
+			append(&s.idx_path, i)
+		}
+	}
 }
 
 _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bool) {
@@ -140,19 +153,50 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 	if len(s.idx_path) > depth {
 		idx := s.idx_path[depth]
 		ok: bool
-		from, ok = strconv.parse_int(idx, 10)
+		from, ok = idx.(int)
 		if !ok {
-			c = c[len(c) - 1].(Container_Info).subs[idx]
+			cnt: Container
+			cnt, ok = c[len(c) - 1].(Container_Info).subs[idx.(string)]
+
+			if ok {
+				c = cnt
+			} else {
+				for e, i in c {
+					c: Container
+					ok: bool
+
+					if c, ok = e.(Container); !ok {
+						continue
+					}
+
+					info: Container_Info
+					if info, ok = c[len(c) - 1].(Container_Info); !ok {
+						continue
+					}
+
+					if info.name == idx {
+						break
+					}
+				}
+			}
 		}
 	}
+
 
 	for e, i in c[from:] {
 		#partial switch v in e {
 		case Container:
-			// TODO: Bytes lost - string will contain garbage
-			// TODO: Redundant append when idx alread in the path
-			b: [4]byte
-			append(&s.idx_path, strconv.write_int(b[:], cast(i64)i, 10))
+			if depth >= len(s.idx_path) {
+				append(&s.idx_path, i)
+			}
+
+			// TODO: Not sure if this works properly
+			defer {
+				if len(s.idx_path) > 0 {
+					pop(&s.idx_path)
+				}
+			}
+
 			_process_container(s, v, depth + 1) or_return
 		case string:
 			if s.mode == .Content {
@@ -181,44 +225,48 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				return false
 			}
 		case Divert:
+			// TODO: Make one universal resolve
 			if v.path[0] == '.' {
+				log.infof("path: %w", s.idx_path[:])
 				p := strings.split(v.path[1:], IDX_PATH_SEP)
 				defer delete(p)
 
 				idx_path_resize := slice.count(p, "^")
 
 				resize(&s.idx_path, len(s.idx_path) - idx_path_resize + 1)
-				append(&s.idx_path, ..p[idx_path_resize:])
-
-				_process_container(s, s.root)
-			}
-			if v.path == "$r" {
-				idx: int
-				for e, i in s.root[0].(Container)[0].(Container) {
-					c: Container
-					ok: bool
-
-					if c, ok = e.(Container); !ok {
-						continue
-					}
-
-					info: Container_Info
-					// FIX: Just for test to remind where to look at
-					if info, ok = c[len(c) - 2].(Container_Info); !ok {
-						continue
-					}
-
-					if info.name == "TODO: FIND WHERE $r1 COMES FROM" {
-						idx = i
-						break
+				for i in p[idx_path_resize:] {
+					ix, ok := strconv.parse_int(i, 10)
+					if ok {
+						append(&s.idx_path, ix)
+					} else {
+						append(&s.idx_path, i)
 					}
 				}
 
-				buf: [4]byte
-				resize(&s.idx_path, 0)
-				append(&s.idx_path, "0", "0", strconv.write_int(buf[:], cast(i64)idx, 10))
+				log.infof("path 2: %w", s.idx_path[:])
 
+				// TODO: Move one level up
 				_process_container(s, s.root)
+			}
+			if v.path == "$r" {
+				append(&s.stack, "choice ")
+				append(&s.current_choices, Choice{path = v.path, text = pop(&s.stack)})
+				// r := "0.0.$r1"
+				// p := strings.split(r, IDX_PATH_SEP)
+				// defer delete(p)
+				//
+				// resize(&s.idx_path, 0)
+				// for i in p {
+				// 	ix, ok := strconv.parse_int(i, 10)
+				// 	if ok {
+				// 		append(&s.idx_path, ix)
+				// 	} else {
+				// 		append(&s.idx_path, i)
+				// 	}
+				// }
+				//
+				// _process_container(s, s.root)
+
 			}
 
 			return false
