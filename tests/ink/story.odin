@@ -1,6 +1,5 @@
 package ink_test
 
-import "core:mem"
 import "core:testing"
 import "src:ink"
 
