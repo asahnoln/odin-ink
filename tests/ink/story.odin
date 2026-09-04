@@ -13,6 +13,23 @@ empty :: proc(t: ^testing.T) {
 }
 
 @(test)
+stop_on_newlines :: proc(t: ^testing.T) {
+	s := ink.story_make(ink.Container{"First", "\n", "Second", "\n"})
+
+	testing.expect_value(t, s.can_continue, true)
+	l := ink.story_continue(&s)
+	testing.expect_value(t, l, "First\n")
+	delete(l)
+
+	testing.expect_value(t, s.can_continue, true)
+	l = ink.story_continue(&s)
+	testing.expect_value(t, l, "Second\n")
+	delete(l)
+
+	testing.expect_value(t, s.can_continue, false)
+}
+
+@(test)
 hello_world :: proc(t: ^testing.T) {
 	s := ink.story_make(
 		ink.Container {
