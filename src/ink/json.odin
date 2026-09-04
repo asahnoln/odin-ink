@@ -86,7 +86,7 @@ _json_convert_object :: proc(val: json.Object) -> Element {
 	if p, ok := val["*"]; ok {
 		return Choice {
 			path = strings.clone(p.(string)),
-			flags = transmute(Choice_Flag_Set)cast(u8)val["flg"].(json.Integer),
+			flags = transmute(Choice_Flag_Set)cast(u8)val["flg"].(json.Float),
 		}
 	}
 

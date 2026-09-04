@@ -143,7 +143,7 @@ convert_info_with_subs :: proc(t: ^testing.T) {
 convert_choice :: proc(t: ^testing.T) {
 	obj := json.Object {
 		"*"   = "0.c-0",
-		"flg" = 18,
+		"flg" = 18.0,
 	}
 	got := ink.json_convert(obj)
 	defer ink.destroy_element(got)
@@ -156,6 +156,26 @@ convert_choice :: proc(t: ^testing.T) {
 	)
 }
 
+@(test)
+story_from_json_choice_done :: proc(t: ^testing.T) {
+	s, err := ink.story_make_from_json(#load("testdata/choice_done.json"))
+	defer ink.story_destroy(&s)
+
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+
+	l := ink.story_continue(&s)
+	testing.expect_value(t, l, "")
+
+	testing.expect_value(t, len(s.current_choices), 1)
+
+	ink.choose_choice_index(&s, 0)
+
+	got := ink.story_continue(&s)
+	want := "choice"
+	testing.expectf(t, got == want, "got %q; want %q", got, want)
+}
 
 // convert_choice_done :: proc(t: ^testing.T) {
 // 	s := ink.story_make_from_json(#load("testdata/choice_done.json"))

@@ -1,5 +1,6 @@
 package ink
 
+import "core:encoding/json"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
@@ -91,6 +92,7 @@ Story :: struct {
 	mode:            Mode,
 	idx_path:        Idx_Path,
 	vars:            map[string]string,
+	root_allocated:  bool,
 }
 
 IDX_PATH_SEP :: "."
@@ -100,6 +102,7 @@ REL_PATH_PARENT :: "^"
 story_make :: proc {
 	story_make_empty,
 	story_make_from_struct,
+	story_make_from_json,
 }
 
 story_make_empty :: proc() -> Story {
@@ -118,11 +121,30 @@ story_make_from_struct :: proc(c: Container) -> Story {
 	return s
 }
 
+story_make_from_json :: proc(data: []byte) -> (s: Story, err: json.Error) {
+	s = story_make_empty()
+
+	j := json.parse(data) or_return
+	defer json.destroy_value(j)
+
+	c := json_convert(j.(json.Object)["root"])
+
+	s.root = c.(Container)
+	s.root_allocated = true
+
+	return
+}
+
 story_destroy :: proc(s: ^Story) {
 	delete(s.current_choices)
 	delete(s.stack)
 	delete(s.idx_path)
 	delete(s.vars)
+
+	if s.root_allocated {
+		destroy_element(s.root)
+	}
+
 	strings.builder_destroy(&s.str_builder)
 }
 
