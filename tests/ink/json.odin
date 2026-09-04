@@ -8,14 +8,13 @@ import "src:ink"
 
 @(test)
 convert_container :: proc(t: ^testing.T) {
-	arrs := json.Array{json.Array{10}}
+	arrs := json.Array{json.Array{10, nil}, nil}
 
 	got := ink.json_convert(arrs)
 	defer ink.destroy_element(got)
 	json.destroy_value(arrs)
 
-	want := ink.Container{ink.Container{}}
-	testing.expectf(t, len(got.(ink.Container)) == len(want), "got %w; want %w")
+	testing.expect_value(t, len(got.(ink.Container)), 2)
 	testing.expect_value(t, got.(ink.Container)[0].(ink.Container)[0].(f64), 10)
 }
 
@@ -100,6 +99,44 @@ convert_temp_var :: proc(t: ^testing.T) {
 	delete(obj)
 
 	testing.expect_value(t, got.(ink.Temp_Var), ink.Temp_Var{name = "$r"})
+}
+
+@(test)
+convert_info :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"#n" = "name",
+		"#f" = 5,
+	}
+	arr := json.Array{20, obj}
+
+	c := ink.json_convert(arr)
+	defer ink.destroy_element(c)
+	delete(obj)
+	delete(arr)
+
+	got := c.(ink.Container)[1].(ink.Container_Info)
+	testing.expect_value(t, got.name, "name")
+	testing.expect_value(t, got.flags, ink.Container_Flag_Set{.Visits, .Count_Start_Only})
+}
+
+@(test)
+convert_info_with_subs :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"g-0" = json.Array{5, nil},
+		"c-0" = json.Array{6, nil},
+	}
+	arr := json.Array{obj}
+
+	c := ink.json_convert(arr)
+	defer ink.destroy_element(c)
+	delete(obj["g-0"].(json.Array))
+	delete(obj["c-0"].(json.Array))
+	delete(obj)
+	delete(arr)
+
+	got := c.(ink.Container)[0].(ink.Container_Info)
+	testing.expect_value(t, got.subs["g-0"][0].(f64), 5)
+	testing.expect_value(t, got.subs["c-0"][0].(f64), 6)
 }
 
 // convert_choice_done :: proc(t: ^testing.T) {

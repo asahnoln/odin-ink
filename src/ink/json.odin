@@ -6,12 +6,7 @@ import "core:strings"
 json_convert :: proc(j: json.Value) -> Element {
 	#partial switch val in j {
 	case json.Array:
-		c := make(Container, len(val))
-		for v, i in val {
-			c[i] = json_convert(v)
-		}
-
-		return c
+		return _json_convert_array(val)
 	case json.Integer:
 		return f64(val)
 	case json.String:
@@ -21,6 +16,37 @@ json_convert :: proc(j: json.Value) -> Element {
 	}
 
 	return nil
+}
+
+_json_convert_array :: proc(val: json.Array) -> Container {
+	c := make(Container, len(val))
+	for v, i in val {
+		if i < len(val) - 1 {
+			c[i] = json_convert(v)
+			continue
+		}
+
+		if o, ok := v.(json.Object); ok {
+			info := Container_Info {
+				name  = strings.clone(o["#n"].(string) or_else ""),
+				flags = transmute(Container_Flag_Set)cast(u8)(o["#f"].(json.Integer) or_else 0),
+				subs  = make(map[string]Container),
+			}
+
+			for n, sub in o {
+				switch n {
+				case "#n", "#f":
+					continue
+				}
+
+				info.subs[strings.clone(n)] = json_convert(sub).(Container)
+			}
+
+			c[i] = info
+		}
+	}
+
+	return c
 }
 
 _json_convert_string :: proc(val: json.String) -> Element {
@@ -68,6 +94,14 @@ destroy_element :: proc(el: Element) {
 		}
 
 		delete(v)
+	case Container_Info:
+		for n, c in v.subs {
+			destroy_element(c)
+			delete(n)
+		}
+
+		delete(v.subs)
+		delete(v.name)
 	case string:
 		delete(v)
 	case Divert:
