@@ -78,6 +78,30 @@ convert_divert :: proc(t: ^testing.T) {
 	testing.expect_value(t, got.(ink.Divert), ink.Divert{path = "0.0.s"})
 }
 
+@(test)
+convert_divert_assign :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"^->" = "0.1.x",
+	}
+	got := ink.json_convert(obj)
+	defer ink.destroy_element(got)
+	delete(obj)
+
+	testing.expect_value(t, got.(ink.Divert_Assign), ink.Divert_Assign{path = "0.1.x"})
+}
+
+@(test)
+convert_temp_var :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"temp=" = "$r",
+	}
+	got := ink.json_convert(obj)
+	defer ink.destroy_element(got)
+	delete(obj)
+
+	testing.expect_value(t, got.(ink.Temp_Var), ink.Temp_Var{name = "$r"})
+}
+
 // convert_choice_done :: proc(t: ^testing.T) {
 // 	s := ink.story_make_from_json(#load("testdata/choice_done.json"))
 //
