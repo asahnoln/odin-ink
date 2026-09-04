@@ -139,6 +139,24 @@ convert_info_with_subs :: proc(t: ^testing.T) {
 	testing.expect_value(t, got.subs["c-0"][0].(f64), 6)
 }
 
+@(test)
+convert_choice :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"*"   = "0.c-0",
+		"flg" = 18,
+	}
+	got := ink.json_convert(obj)
+	defer ink.destroy_element(got)
+	delete(obj)
+
+	testing.expect_value(
+		t,
+		got.(ink.Choice),
+		ink.Choice{path = "0.c-0", flags = {.Has_Start_Content, .Once_Only}},
+	)
+}
+
+
 // convert_choice_done :: proc(t: ^testing.T) {
 // 	s := ink.story_make_from_json(#load("testdata/choice_done.json"))
 //

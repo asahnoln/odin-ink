@@ -83,6 +83,13 @@ _json_convert_object :: proc(val: json.Object) -> Element {
 		return Temp_Var{name = strings.clone(v.(string))}
 	}
 
+	if p, ok := val["*"]; ok {
+		return Choice {
+			path = strings.clone(p.(string)),
+			flags = transmute(Choice_Flag_Set)cast(u8)val["flg"].(json.Integer),
+		}
+	}
+
 	return nil
 }
 
@@ -110,5 +117,7 @@ destroy_element :: proc(el: Element) {
 		delete(v.path)
 	case Temp_Var:
 		delete(v.name)
+	case Choice:
+		delete(v.path)
 	}
 }
