@@ -28,6 +28,16 @@ convert_string :: proc(t: ^testing.T) {
 	testing.expect_value(t, got.(string), "Hey!")
 }
 
+@(test)
+convert_newline :: proc(t: ^testing.T) {
+	s := strings.clone("\n")
+	got := ink.json_convert(s)
+	defer ink.destroy_element(got)
+	delete(s)
+
+	testing.expect_value(t, got.(string), "\n")
+}
+
 // TODO: What if empty string is ecnountered???
 
 @(test)

@@ -154,8 +154,8 @@ story_continue :: proc(s: ^Story) -> string {
 	return strings.to_string(s.str_builder)
 }
 
-choose_choice_index :: proc(s: ^Story, i: uint) {
-	_convert_path(s.current_choices[0].path, &s.idx_path)
+choose_choice_index :: proc(s: ^Story, i: int) {
+	_convert_path(s.current_choices[i].path, &s.idx_path)
 
 	resize(&s.current_choices, 0)
 }

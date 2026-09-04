@@ -55,6 +55,8 @@ _json_convert_string :: proc(val: json.String) -> Element {
 	}
 
 	switch val {
+	case "\n":
+		return strings.clone(val)
 	case "done":
 		return .Done
 	case "str":
