@@ -117,8 +117,6 @@ story_make_empty :: proc() -> Story {
 		can_continue    = true,
 	}
 
-	append(&s.idx_path, 0)
-
 	return s
 }
 
@@ -167,9 +165,18 @@ story_continue :: proc(s: ^Story) -> string {
 }
 
 _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bool) {
-	from := 0
-	if len(s.idx_path) > depth {
-		from = s.idx_path[depth].(int)
+	if len(s.idx_path) == depth {
+		append(&s.idx_path, 0)
+	}
+
+	from, ok := s.idx_path[depth].(int)
+
+	if !ok {
+		idx := s.idx_path[depth].(string)
+
+		cnt := c[len(c) - 1].(Container_Info).subs[idx]
+		_process_container(s, cnt, depth + 1)
+		return false
 	}
 
 	for e, i in c[from:] {
@@ -177,9 +184,6 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 
 		#partial switch v in e {
 		case Container:
-			if len(s.idx_path) == depth + 1 {
-				append(&s.idx_path, 0)
-			}
 			_process_container(s, v, depth + 1) or_return
 		case string:
 			strings.write_string(&s.str_builder, v)

@@ -14,9 +14,10 @@ divert :: proc(t: ^testing.T) {
 			"Skip that",
 			"\n",
 			ink.Container {
-				"Now ", //
+				"Now...", //
+				"\n",
 			},
-			"collect ",
+			"Collect ",
 		},
 		"this!",
 		"\n",
@@ -28,7 +29,49 @@ divert :: proc(t: ^testing.T) {
 	{
 		l := ink.story_continue(&s)
 		defer delete(l)
-		testing.expect_value(t, l, "Now collect this!\n")
+		testing.expect_value(t, l, "Now...\n")
 	}
 
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Collect this!\n")
+	}
+}
+
+@(test)
+divert_to_named_in_info :: proc(t: ^testing.T) {
+	subs := make(map[string]ink.Container)
+	subs["subContainer"] = ink.Container {
+		"Sub",
+		"text",
+		ink.Container{"\n", "Super"},
+		" subtext",
+		"\n",
+	}
+	defer delete(subs)
+
+	s := ink.story_make(
+	ink.Container {
+		ink.Divert{path = "2.subContainer"},
+		"Don't read this",
+		ink.Container {
+			ink.Container_Info {
+				subs = subs, //
+			},
+		},
+	},
+	)
+	defer ink.story_destroy(&s)
+
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Subtext\n")
+	}
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Super subtext\n")
+	}
 }
