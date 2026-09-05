@@ -183,6 +183,7 @@ story_from_json_choice_done :: proc(t: ^testing.T) {
 	ink.choose_choice_index(&s, 0)
 
 	got := ink.story_continue(&s)
+	defer delete(got)
 	want := "choice"
 	testing.expectf(t, got == want, "got %q; want %q", got, want)
 }

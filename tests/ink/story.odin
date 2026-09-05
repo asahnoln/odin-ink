@@ -1,5 +1,6 @@
 package ink_test
 
+import "core:strings"
 import "core:testing"
 import "src:ink"
 
@@ -15,6 +16,7 @@ empty :: proc(t: ^testing.T) {
 @(test)
 stop_on_newlines :: proc(t: ^testing.T) {
 	s := ink.story_make(ink.Container{"First", "\n", "Second", "\n"})
+	defer ink.story_destroy(&s)
 
 	testing.expect_value(t, s.can_continue, true)
 	l := ink.story_continue(&s)
@@ -26,6 +28,9 @@ stop_on_newlines :: proc(t: ^testing.T) {
 	testing.expect_value(t, l, "Second\n")
 	delete(l)
 
+	// TODO: It would be better to know in advance if can continue or not...
+	l = ink.story_continue(&s)
+	testing.expect_value(t, l, "")
 	testing.expect_value(t, s.can_continue, false)
 }
 
@@ -49,6 +54,7 @@ hello_world :: proc(t: ^testing.T) {
 	defer ink.story_destroy(&s)
 
 	got := ink.story_continue(&s)
+	defer delete(got)
 	testing.expect_value(t, got, "Hello, world!\n")
 }
 
@@ -91,6 +97,7 @@ choice_brackets :: proc(t: ^testing.T) {
 	ink.choose_choice_index(&s, 0)
 
 	got := ink.story_continue(&s)
+	defer delete(got)
 	want := "Text\n"
 	testing.expectf(t, got == want, "got %q; want %q", got, want)
 }
@@ -148,6 +155,7 @@ choice_done :: proc(t: ^testing.T) {
 	ink.choose_choice_index(&s, 0)
 
 	got := ink.story_continue(&s)
+	defer delete(got)
 	want := "choice"
 	testing.expectf(t, got == want, "got %q; want %q", got, want)
 }

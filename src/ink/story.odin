@@ -87,12 +87,14 @@ Idx_Path :: [dynamic]Idx
 Story :: struct {
 	root:            Container,
 	current_choices: [dynamic]Choice,
+	can_continue:    bool,
 	str_builder:     strings.Builder,
 	stack:           [dynamic]string,
 	mode:            Mode,
 	idx_path:        Idx_Path,
 	vars:            map[string]string,
 	root_allocated:  bool,
+	_last_idx:       int,
 }
 
 IDX_PATH_SEP :: "."
@@ -112,6 +114,7 @@ story_make_empty :: proc() -> Story {
 		stack = make([dynamic]string),
 		idx_path = make(Idx_Path),
 		vars = make(map[string]string),
+		can_continue = true,
 	}
 }
 
@@ -140,18 +143,25 @@ story_destroy :: proc(s: ^Story) {
 	delete(s.stack)
 	delete(s.idx_path)
 	delete(s.vars)
+	strings.builder_destroy(&s.str_builder)
 
 	if s.root_allocated {
 		destroy_element(s.root)
 	}
 
-	strings.builder_destroy(&s.str_builder)
 }
 
 story_continue :: proc(s: ^Story) -> string {
 	_process_container(s, s.root)
 
-	return strings.to_string(s.str_builder)
+	l := strings.clone(strings.to_string(s.str_builder))
+	strings.builder_reset(&s.str_builder)
+
+	if l == "" {
+		s.can_continue = false
+	}
+
+	return l
 }
 
 choose_choice_index :: proc(s: ^Story, i: int) {
@@ -182,8 +192,7 @@ _convert_path :: proc(path: string, idxs: ^Idx_Path) {
 }
 
 _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bool) {
-	c := c
-	from := 0
+	from := s._last_idx
 	if len(s.idx_path) > depth {
 		idx := s.idx_path[depth]
 		ok: bool
@@ -234,7 +243,7 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 		#partial switch v in e {
 		case Container:
 			if depth >= len(s.idx_path) {
-				append(&s.idx_path, i)
+				append(&s.idx_path, from + i)
 			}
 
 			// TODO: Not sure if this works properly
@@ -260,6 +269,7 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 			strings.write_string(&s.str_builder, v_clean)
 
 			if v == "\n" {
+				s._last_idx = i + from + 1
 				return false
 			}
 		case Choice:
