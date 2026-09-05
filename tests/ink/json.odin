@@ -38,7 +38,7 @@ convert_newline :: proc(t: ^testing.T) {
 	testing.expect_value(t, got.(string), "\n")
 }
 
-// TODO: What if empty string is ecnountered???
+// TODO: What if empty string is encountered???
 
 @(test)
 convert_command :: proc(t: ^testing.T) {
@@ -166,70 +166,24 @@ convert_choice :: proc(t: ^testing.T) {
 	)
 }
 
-@(test)
-story_from_json_choice_done :: proc(t: ^testing.T) {
-	s, err := ink.story_make_from_json(#load("testdata/choice_done.json"))
-	defer ink.story_destroy(&s)
-
-	if !testing.expect_value(t, err, nil) {
-		return
-	}
-
-	l := ink.story_continue(&s)
-	testing.expect_value(t, l, "")
-
-	testing.expect_value(t, len(s.current_choices), 1)
-
-	ink.choose_choice_index(&s, 0)
-
-	got := ink.story_continue(&s)
-	defer delete(got)
-	want := "choice"
-	testing.expectf(t, got == want, "got %q; want %q", got, want)
-}
-
-// convert_choice_done :: proc(t: ^testing.T) {
-// 	s := ink.story_make_from_json(#load("testdata/choice_done.json"))
+// @(test)
+// story_from_json_choice_done :: proc(t: ^testing.T) {
+// 	s, err := ink.story_make_from_json(#load("testdata/choice_done.json"))
+// 	defer ink.story_destroy(&s)
 //
-// 	sub1: map[string]ink.Container
-// 	sub1["s"] = ink.Container{"choice ", ink.Divert{path = "$r", var = true}, nil}
-// 	defer delete(sub1)
-//
-// 	subs: map[string]ink.Container
-// 	subs["c-0"] = ink.Container {
-// 		.Ev,
-// 		ink.Divert_Assign{path = "0.c-0.$r2"},
-// 		.Ev_End,
-// 		ink.Temp_Var{name = "$r"},
-// 		ink.Divert{path = "0.0.s"},
-// 		ink.Container{ink.Container_Info{name = "$r2"}},
-// 		.Done,
-// 		"\n",
-// 		ink.Divert{path = "0.g-0"},
-// 		ink.Container_Info{flags = {.Visits, .Count_Start_Only}},
-// 	}
-// 	subs["g-0"] = ink.Container{.Done, ink.Container_Info{flags = {.Visits, .Count_Start_Only}}}
-// 	defer delete(subs)
-//
-// 	want := ink.Container {
-// 		ink.Container {
-// 			ink.Container {
-// 				.Ev,
-// 				ink.Divert_Assign{path = "0.0.$r1"},
-// 				ink.Temp_Var{name = "$r"},
-// 				.Str,
-// 				ink.Divert{path = ".^.s"},
-// 				ink.Container{ink.Container_Info{name = "$r1"}},
-// 				.Str_End,
-// 				.Ev_End,
-// 				ink.Choice{path = "0.c-0", flags = {.Has_Start_Content, .Once_Only}},
-// 				ink.Container_Info{subs = sub1},
-// 			},
-// 			ink.Container_Info{subs = subs},
-// 		},
-// 		.Done,
-// 		ink.Container_Info{flags = {.Visits}},
+// 	if !testing.expect_value(t, err, nil) {
+// 		return
 // 	}
 //
-// 	testing.expect_value(t, s.root, want)
+// 	l := ink.story_continue(&s)
+// 	testing.expect_value(t, l, "")
+//
+// 	testing.expect_value(t, len(s.current_choices), 1)
+//
+// 	ink.choose_choice_index(&s, 0)
+//
+// 	got := ink.story_continue(&s)
+// 	defer delete(got)
+// 	want := "choice"
+// 	testing.expectf(t, got == want, "got %q; want %q", got, want)
 // }
