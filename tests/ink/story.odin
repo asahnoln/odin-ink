@@ -1,6 +1,5 @@
 package ink_test
 
-import "core:log"
 import "core:testing"
 import "src:ink"
 

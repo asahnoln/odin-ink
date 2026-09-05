@@ -1,8 +1,6 @@
 package ink
 
 import "core:encoding/json"
-import "core:log"
-import "core:mem"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
@@ -189,6 +187,11 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				s.idx_path[depth] = s.idx_path[depth].(int) + 1
 				return false
 			}
+		case Divert:
+			_convert_path(v.path, &s.idx_path)
+
+			_process_container(s, s.root)
+			return false
 		}
 	}
 
