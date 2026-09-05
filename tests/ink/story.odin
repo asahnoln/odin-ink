@@ -1,5 +1,6 @@
 package ink_test
 
+import "core:log"
 import "core:testing"
 import "src:ink"
 
@@ -92,8 +93,37 @@ story_can_continue :: proc(t: ^testing.T) {
 	testing.expect_value(t, s.can_continue, true)
 	delete(ink.story_continue(&s))
 
+	// NOTE: I don't know if it's possible cleanly check can_continue without calling story_continue
 	delete(ink.story_continue(&s))
 	testing.expect_value(t, s.can_continue, false)
+}
 
+@(test)
+story_through_sub_containers :: proc(t: ^testing.T) {
+	s := ink.story_make(
+	ink.Container {
+		"Hey ",
+		ink.Container {
+			"you!", //
+		},
+		ink.Container{"\n", "How"},
+		" ",
+		ink.Container{"are ", ink.Container{"you "}, "do"},
+		"ing?",
+		ink.Container{"\n"},
+	},
+	)
+	defer ink.story_destroy(&s)
 
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Hey you!\n")
+	}
+
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "How are you doing?\n")
+	}
 }

@@ -1,6 +1,7 @@
 package ink
 
 import "core:encoding/json"
+import "core:log"
 import "core:mem"
 import "core:slice"
 import "core:strconv"
@@ -174,15 +175,18 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 	}
 
 	for e, i in c[from:] {
+		s.idx_path[depth] = i + from
+
 		#partial switch v in e {
 		case Container:
+			if len(s.idx_path) == depth + 1 {
+				append(&s.idx_path, 0)
+			}
 			_process_container(s, v, depth + 1) or_return
-
-			continue
 		case string:
 			strings.write_string(&s.str_builder, v)
 			if v == "\n" {
-				s.idx_path[depth] = i + from + 1
+				s.idx_path[depth] = s.idx_path[depth].(int) + 1
 				return false
 			}
 		}
