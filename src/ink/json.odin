@@ -96,7 +96,7 @@ _json_convert_object :: proc(val: json.Object) -> Element {
 }
 
 destroy_element :: proc(el: Element) {
-	#partial switch v in el {
+	switch v in el {
 	case Container:
 		for e in v {
 			destroy_element(e)
@@ -121,5 +121,6 @@ destroy_element :: proc(el: Element) {
 		delete(v.name)
 	case Choice:
 		delete(v.path)
+	case f64, Control_Command:
 	}
 }
