@@ -1,6 +1,7 @@
 package ink
 
 import "core:encoding/json"
+import "core:mem"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
@@ -152,7 +153,41 @@ story_destroy :: proc(s: ^Story) {
 }
 
 story_continue :: proc(s: ^Story) -> string {
-	return ""
+	_process_container(s, s.root)
+
+	l := strings.clone(strings.to_string(s.str_builder))
+	strings.builder_reset(&s.str_builder)
+
+	return l
+}
+
+_process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bool) {
+	from := 0
+	if len(s.idx_path) > depth {
+		from = s.idx_path[depth].(int)
+	} else {
+		from = s._last_idx
+	}
+
+	for e, i in c[from:] {
+		#partial switch v in e {
+		case Container:
+			_process_container(s, v, depth + 1) or_return
+
+			continue
+		case string:
+			strings.write_string(&s.str_builder, v)
+			if e.(string) == "\n" {
+				s._last_idx = i + from + 1
+				return false
+			}
+		}
+	}
+
+	// if depth == 0 {
+	s.can_continue = false
+	// }
+	return true
 }
 
 choose_choice_index :: proc(s: ^Story, i: int) {
