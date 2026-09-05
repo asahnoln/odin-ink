@@ -1,6 +1,7 @@
 package ink
 
 import "core:encoding/json"
+import "core:log"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
@@ -155,11 +156,16 @@ story_destroy :: proc(s: ^Story) {
 
 story_continue :: proc(s: ^Story) -> string {
 	_process_container(s, s.root)
+
 	s.can_continue = len(s.idx_path) > 0
+	if s.can_continue {
+		if _, ok := s.idx_path[len(s.idx_path) - 1].(string); ok {
+			s.can_continue = false
+		}
+	}
 
 	l := strings.clone(strings.to_string(s.str_builder))
 	strings.builder_reset(&s.str_builder)
-
 
 	return l
 }
@@ -170,12 +176,8 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 	}
 
 	from, ok := s.idx_path[depth].(int)
-
 	if !ok {
-		idx := s.idx_path[depth].(string)
-
-		cnt := c[len(c) - 1].(Container_Info).subs[idx]
-		_process_container(s, cnt, depth + 1)
+		_process_container(s, c[len(c) - 1].(Container_Info).subs[s.idx_path[depth].?], depth + 1)
 		return false
 	}
 

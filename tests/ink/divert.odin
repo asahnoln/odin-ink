@@ -21,7 +21,6 @@ divert :: proc(t: ^testing.T) {
 		},
 		"this!",
 		"\n",
-		"Stop",
 	},
 	)
 	defer ink.story_destroy(&s)
@@ -37,6 +36,9 @@ divert :: proc(t: ^testing.T) {
 		defer delete(l)
 		testing.expect_value(t, l, "Collect this!\n")
 	}
+
+	delete(ink.story_continue(&s))
+	testing.expect_value(t, s.can_continue, false)
 }
 
 @(test)
@@ -74,4 +76,7 @@ divert_to_named_in_info :: proc(t: ^testing.T) {
 		defer delete(l)
 		testing.expect_value(t, l, "Super subtext\n")
 	}
+
+	delete(ink.story_continue(&s))
+	testing.expect_value(t, s.can_continue, false)
 }
