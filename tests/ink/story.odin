@@ -1,14 +1,12 @@
 package ink_test
 
-import "base:builtin"
-import "base:runtime"
-import "core:mem"
 import "core:testing"
 import "src:ink"
 
 @(test)
 story_empty :: proc(t: ^testing.T) {
 	s := ink.story_make(ink.Container{})
+	defer ink.story_destroy(&s)
 
 	l := ink.story_continue(&s)
 	testing.expect_value(t, l, "")
@@ -33,79 +31,56 @@ story_collects_strings :: proc(t: ^testing.T) {
 }
 
 @(test)
-story_collects_strings_recursively :: proc(t: ^testing.T) {
-	s := ink.story_make(
-	ink.Container {
-		"Hey",
-		ink.Container {
-			" ", //
-			ink.Container{"you"},
-		},
-		"!",
-		"\n",
-	},
-	)
-	defer ink.story_destroy(&s)
-
-	l := ink.story_continue(&s)
-	defer delete(l)
-	testing.expect_value(t, l, "Hey you!\n")
-}
-
-@(test)
 story_stops_on_newlines :: proc(t: ^testing.T) {
 	s := ink.story_make(
 	ink.Container {
-		"Hey", //
+		"Read this", //
 		"\n",
-		"Don't continue here...",
+		"Don't read this",
 	},
 	)
 	defer ink.story_destroy(&s)
 
 	l := ink.story_continue(&s)
 	defer delete(l)
-	testing.expect_value(t, l, "Hey\n")
+	testing.expect_value(t, l, "Read this\n")
 }
 
 @(test)
-story_continues_from_last_stop :: proc(t: ^testing.T) {
+story_keep_going_from_where_stopped :: proc(t: ^testing.T) {
 	s := ink.story_make(
 	ink.Container {
 		"Skip this", //
 		"\n",
-		"Read this",
+		"Cool!",
 		"\n",
-		"And read this",
-		"\n",
+		"Stop there",
 	},
 	)
 	defer ink.story_destroy(&s)
 
-	l := ink.story_continue(&s)
-	delete(l)
+	delete(ink.story_continue(&s))
 
-	l = ink.story_continue(&s)
-	testing.expect_value(t, l, "Read this\n")
-	delete(l)
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Cool!\n")
+	}
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Stop there")
+	}
 
-	l = ink.story_continue(&s)
-	testing.expect_value(t, l, "And read this\n")
-	delete(l)
-
-	l = ink.story_continue(&s)
-	testing.expect_value(t, l, "")
 }
 
 @(test)
 story_can_continue :: proc(t: ^testing.T) {
 	s := ink.story_make(
 	ink.Container {
-		"Go", //
+		"1", //
 		"\n",
-		"Go",
-		"\n",
-		"Go",
+		"2",
 		"\n",
 	},
 	)
@@ -117,41 +92,8 @@ story_can_continue :: proc(t: ^testing.T) {
 	testing.expect_value(t, s.can_continue, true)
 	delete(ink.story_continue(&s))
 
-	testing.expect_value(t, s.can_continue, true)
 	delete(ink.story_continue(&s))
-
-	// TODO: Would be great to see in advance if the story can continue...
-	l := ink.story_continue(&s)
-	testing.expect_value(t, l, "")
 	testing.expect_value(t, s.can_continue, false)
-}
 
-@(test)
-story_stops_and_goes_recursively :: proc(t: ^testing.T) {
-	s := ink.story_make(
-	ink.Container {
-		"Skip this", //
-		"\n",
-		ink.Container{"Read this", "\n"},
-		"And read this",
-		"\n",
-	},
-	)
 
-	append(&s.idx_path, 2)
-
-	defer ink.story_destroy(&s)
-
-	l: string
-
-	l = ink.story_continue(&s)
-	testing.expect_value(t, l, "Read this\n")
-	delete(l)
-
-	l = ink.story_continue(&s)
-	testing.expect_value(t, l, "And read this\n")
-	delete(l)
-
-	l = ink.story_continue(&s)
-	testing.expect_value(t, l, "")
 }

@@ -109,14 +109,18 @@ story_make :: proc {
 }
 
 story_make_empty :: proc() -> Story {
-	return {
-		str_builder = strings.builder_make(),
+	s := Story {
+		str_builder     = strings.builder_make(),
 		current_choices = make([dynamic]Choice),
-		stack = make([dynamic]string),
-		idx_path = make(Idx_Path),
-		vars = make(map[string]string),
-		can_continue = true,
+		stack           = make([dynamic]string),
+		idx_path        = make(Idx_Path),
+		vars            = make(map[string]string),
+		can_continue    = true,
 	}
+
+	append(&s.idx_path, 0)
+
+	return s
 }
 
 story_make_from_struct :: proc(c: Container) -> Story {
@@ -154,9 +158,11 @@ story_destroy :: proc(s: ^Story) {
 
 story_continue :: proc(s: ^Story) -> string {
 	_process_container(s, s.root)
+	s.can_continue = len(s.idx_path) > 0
 
 	l := strings.clone(strings.to_string(s.str_builder))
 	strings.builder_reset(&s.str_builder)
+
 
 	return l
 }
@@ -165,8 +171,6 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 	from := 0
 	if len(s.idx_path) > depth {
 		from = s.idx_path[depth].(int)
-	} else {
-		from = s._last_idx
 	}
 
 	for e, i in c[from:] {
@@ -177,16 +181,14 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 			continue
 		case string:
 			strings.write_string(&s.str_builder, v)
-			if e.(string) == "\n" {
-				s._last_idx = i + from + 1
+			if v == "\n" {
+				s.idx_path[depth] = i + from + 1
 				return false
 			}
 		}
 	}
 
-	// if depth == 0 {
-	s.can_continue = false
-	// }
+	pop(&s.idx_path)
 	return true
 }
 
