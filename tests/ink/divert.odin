@@ -166,3 +166,8 @@ divert_to_named_container_by_info_when_info_exists :: proc(t: ^testing.T) {
 	delete(ink.story_continue(&s))
 	testing.expect_value(t, s.can_continue, false)
 }
+
+@(test)
+choice :: proc(t: ^testing.T) {
+	testing.expect_value(t, true, false)
+}
