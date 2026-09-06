@@ -172,15 +172,16 @@ divert_from_var :: proc(t: ^testing.T) {
 	s := ink.story_make(
 	ink.Container {
 		.Ev,
-		ink.Divert_Assign{path = "5.2"},
+		ink.Divert_Assign{path = "5.1.cool-container"},
 		.Ev_End,
 		ink.Temp_Var{name = "$r"},
 		ink.Divert{path = "$r", var = true}, //
 		ink.Container {
 			"Should skip this",
-			"\n",
 			ink.Container {
-				"Var ", //
+				"And skip this", //
+				ink.Container{ink.Container_Info{name = "cool-container"}},
+				"Var ",
 			},
 			"works!",
 			"\n",

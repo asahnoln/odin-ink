@@ -235,9 +235,16 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 			}
 
 		case Divert:
-			_convert_path(v.path, &s.idx_path)
+			p := v.path if !v.var else s.vars[v.path]
+			_convert_path(p, &s.idx_path)
 			_process_container(s, s.root)
 			return false
+
+		case Divert_Assign:
+			append(&s.stack, v.path)
+
+		case Temp_Var:
+			s.vars[v.name] = pop(&s.stack)
 
 		case Choice:
 			ch := v
