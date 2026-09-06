@@ -180,7 +180,7 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 	case int:
 		from = v
 	case string:
-		if info, ok := c[len(c) - 1].(Container_Info); ok {
+		if info, ok := _container_info(c); ok {
 			// TODO: What happens if this container not found? Error?
 			if cnt, ok := info.subs[v]; ok {
 				_process_container(s, cnt, depth + 1)
@@ -191,7 +191,7 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 		for e, i in c {
 			if cnt, ok := e.(Container); ok {
 				// TODO:: What happens if container not found? Error?
-				if info, ok := cnt[len(cnt) - 1].(Container_Info); ok && info.name == v {
+				if info, ok := _container_info(cnt); ok && info.name == v {
 					from = i
 					break
 				}
@@ -221,6 +221,10 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 
 	pop(&s.idx_path)
 	return true
+}
+
+_container_info :: proc(c: Container) -> (Container_Info, bool) {
+	return c[len(c) - 1].(Container_Info)
 }
 
 choose_choice_index :: proc(s: ^Story, i: int) {
