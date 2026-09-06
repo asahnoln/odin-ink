@@ -80,3 +80,29 @@ divert_to_named_in_info :: proc(t: ^testing.T) {
 	delete(ink.story_continue(&s))
 	testing.expect_value(t, s.can_continue, false)
 }
+
+@(test)
+divert_relative_path :: proc(t: ^testing.T) {
+	subs := make(map[string]ink.Container)
+	subs["subName"] = ink.Container{"Sub", "container!", "\n"}
+	defer delete(subs)
+
+	s := ink.story_make(
+	ink.Container {
+		ink.Container {
+			ink.Divert{path = ".^.^.subName"}, //
+		},
+		ink.Container_Info{subs = subs},
+	},
+	)
+	defer ink.story_destroy(&s)
+
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Subcontainer!\n")
+	}
+
+	delete(ink.story_continue(&s))
+	testing.expect_value(t, s.can_continue, false)
+}

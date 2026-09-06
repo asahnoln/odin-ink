@@ -222,6 +222,7 @@ _convert_path :: proc(path: string, idxs: ^Idx_Path) {
 
 	idx_path_resize := slice.count(p, REL_PATH_PARENT)
 
+	last_idx := pop(idxs)
 	resize(idxs, 0 if idx_path_resize == 0 else len(idxs) - idx_path_resize + 1)
 
 	for i in p[idx_path_resize:] {
@@ -230,4 +231,6 @@ _convert_path :: proc(path: string, idxs: ^Idx_Path) {
 		iu = ix if ok else i
 		append(idxs, iu)
 	}
+
+	append(idxs, last_idx)
 }
