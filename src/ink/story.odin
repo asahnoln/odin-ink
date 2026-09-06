@@ -233,6 +233,8 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 			#partial switch v {
 			case .Str:
 				s.mode = .Content
+			case .Ev_End:
+				s.mode = .Default
 			}
 		}
 	}
@@ -246,9 +248,12 @@ _container_info :: proc(c: Container) -> (Container_Info, bool) {
 }
 
 choose_choice_index :: proc(s: ^Story, i: int) {
+	// TODO: Check index bound? Return error?
 	_convert_path(s.current_choices[i].path, &s.idx_path)
 
 	resize(&s.current_choices, 0)
+
+	s.can_continue = true
 }
 
 _convert_path :: proc(path: string, idxs: ^Idx_Path) {
@@ -260,11 +265,12 @@ _convert_path :: proc(path: string, idxs: ^Idx_Path) {
 	p := strings.split(path[p_idx:], IDX_PATH_SEP)
 	defer delete(p)
 
-	idx_path_resize := slice.count(p, REL_PATH_PARENT)
-
-	if len(idxs) > 0 {
-		pop(idxs)
+	idx_path_resize := 0
+	if p_idx == 1 {
+		idx_path_resize = slice.count(p, REL_PATH_PARENT)
 	}
+
+	pop_safe(idxs)
 
 	resize(idxs, 0 if idx_path_resize == 0 else len(idxs) - idx_path_resize + 1)
 
@@ -274,5 +280,4 @@ _convert_path :: proc(path: string, idxs: ^Idx_Path) {
 		iu = ix if ok else i
 		append(idxs, iu)
 	}
-
 }

@@ -1,5 +1,6 @@
 package ink_test
 
+import "core:log"
 import "core:testing"
 import "src:ink"
 
@@ -181,7 +182,7 @@ choice :: proc(t: ^testing.T) {
 				"choice text",
 				.Str_End,
 				.Ev_End,
-				ink.Choice{path = "0.c-0", flags = {.Has_Start_Content}},
+				ink.Choice{path = "0.c-0", flags = {.Has_Start_Content, .Once_Only}},
 				ink.Container_Info{subs = subs},
 			},
 		},
@@ -200,14 +201,16 @@ choice :: proc(t: ^testing.T) {
 
 	ink.choose_choice_index(&s, 0)
 
+	testing.expect_value(t, len(s.current_choices), 0)
 	testing.expect_value(t, s.can_continue, true)
-	//
-	// {
-	// 	l := ink.story_continue(&s)
-	// 	defer delete(l)
-	// 	testing.expect_value(t, l, "Choice branch\n")
-	// }
-	//
-	// ink.story_continue(&s)
-	// testing.expect_value(t, s.can_continue, false)
+
+	log.infof("idx path: %w", s.idx_path[:])
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Choice branch\n")
+	}
+
+	ink.story_continue(&s)
+	testing.expect_value(t, s.can_continue, false)
 }
