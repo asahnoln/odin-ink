@@ -136,3 +136,33 @@ divert_to_named_container_by_info :: proc(t: ^testing.T) {
 	delete(ink.story_continue(&s))
 	testing.expect_value(t, s.can_continue, false)
 }
+
+@(test)
+divert_to_named_container_by_info_when_info_exists :: proc(t: ^testing.T) {
+	s := ink.story_make(
+	ink.Container {
+		ink.Divert{path = "1.named2"}, //
+		ink.Container {
+			"Should skip this",
+			"\n",
+			ink.Container {
+				"Got ", //
+				ink.Container_Info{name = "named2"},
+			},
+			"it!",
+			"\n",
+			ink.Container_Info{},
+		},
+	},
+	)
+	defer ink.story_destroy(&s)
+
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Got it!\n")
+	}
+
+	delete(ink.story_continue(&s))
+	testing.expect_value(t, s.can_continue, false)
+}

@@ -175,26 +175,25 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 		append(&s.idx_path, 0)
 	}
 
-	c := c
-	from, ok := s.idx_path[depth].(int)
-	if !ok {
-		idx := s.idx_path[depth].(string)
+	from := 0
+	switch v in s.idx_path[depth] {
+	case int:
+		from = v
+	case string:
 		if info, ok := c[len(c) - 1].(Container_Info); ok {
 			// TODO: What happens if this container not found? Error?
-			if cnt, ok := info.subs[idx]; ok {
+			if cnt, ok := info.subs[v]; ok {
 				_process_container(s, cnt, depth + 1)
 				return false
 			}
-		} else {
-			for e, i in c {
-				if cnt, ok := e.(Container); ok {
-					// TODO:: What happens if container not found? Error?
-					if info, ok := cnt[len(cnt) - 1].(Container_Info); ok {
-						if info.name == idx {
-							from = i
-							break
-						}
-					}
+		}
+
+		for e, i in c {
+			if cnt, ok := e.(Container); ok {
+				// TODO:: What happens if container not found? Error?
+				if info, ok := cnt[len(cnt) - 1].(Container_Info); ok && info.name == v {
+					from = i
+					break
 				}
 			}
 		}
