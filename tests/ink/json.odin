@@ -159,10 +159,11 @@ convert_choice :: proc(t: ^testing.T) {
 	defer ink.destroy_element(got)
 	delete(obj)
 
+	testing.expect_value(t, got.(ink.Choice).path, "0.c-0")
 	testing.expect_value(
 		t,
-		got.(ink.Choice),
-		ink.Choice{path = "0.c-0", flags = {.Has_Start_Content, .Once_Only}},
+		got.(ink.Choice).flags,
+		ink.Choice_Flag_Set{.Has_Start_Content, .Once_Only},
 	)
 }
 

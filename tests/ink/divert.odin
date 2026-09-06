@@ -182,7 +182,7 @@ choice :: proc(t: ^testing.T) {
 				"choice text",
 				.Str_End,
 				.Ev_End,
-				ink.Choice{path = "0.c-0", flags = {.Has_Start_Content, .Once_Only}},
+				ink.Choice{path = ".^.c-0", flags = {.Has_Start_Content, .Once_Only}},
 				ink.Container_Info{subs = subs},
 			},
 		},
@@ -204,7 +204,6 @@ choice :: proc(t: ^testing.T) {
 	testing.expect_value(t, len(s.current_choices), 0)
 	testing.expect_value(t, s.can_continue, true)
 
-	log.infof("idx path: %w", s.idx_path[:])
 	{
 		l := ink.story_continue(&s)
 		defer delete(l)

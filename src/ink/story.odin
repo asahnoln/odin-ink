@@ -1,6 +1,7 @@
 package ink
 
 import "core:encoding/json"
+import "core:log"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
@@ -67,9 +68,10 @@ Choice_Flag :: enum {
 Choice_Flag_Set :: bit_set[Choice_Flag]
 
 Choice :: struct {
-	path:  string,
-	flags: Choice_Flag_Set,
-	text:  string,
+	path:     string,
+	flags:    Choice_Flag_Set,
+	text:     string,
+	idx_path: []Idx,
 }
 
 Mode :: enum {
@@ -170,6 +172,20 @@ story_continue :: proc(s: ^Story) -> string {
 	return l
 }
 
+choose_choice_index :: proc(s: ^Story, i: int) {
+	// TODO: Check index bound? Return error?
+	append(&s.idx_path, ..s.current_choices[i].idx_path)
+	_convert_path(s.current_choices[i].path, &s.idx_path)
+
+	for c in s.current_choices {
+		delete(c.idx_path)
+	}
+	resize(&s.current_choices, 0)
+
+	s.can_continue = true
+}
+
+
 _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bool) {
 	if len(s.idx_path) == depth {
 		append(&s.idx_path, 0)
@@ -227,6 +243,8 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 		case Choice:
 			ch := v
 			ch.text = pop(&s.stack)
+			ch.idx_path = make([]Idx, len(s.idx_path))
+			copy(ch.idx_path, s.idx_path[:])
 			append(&s.current_choices, ch)
 
 		case Control_Command:
@@ -247,16 +265,10 @@ _container_info :: proc(c: Container) -> (Container_Info, bool) {
 	return c[len(c) - 1].(Container_Info)
 }
 
-choose_choice_index :: proc(s: ^Story, i: int) {
-	// TODO: Check index bound? Return error?
-	_convert_path(s.current_choices[i].path, &s.idx_path)
-
-	resize(&s.current_choices, 0)
-
-	s.can_continue = true
-}
-
 _convert_path :: proc(path: string, idxs: ^Idx_Path) {
+	if path == ".^.c-0" {
+		log.infof("convert idxs: %w", idxs^)
+	}
 	p_idx := 0
 	if path[0] == REL_PATH_START {
 		p_idx = 1
