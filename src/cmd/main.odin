@@ -7,18 +7,20 @@ import "core:strconv"
 import "src:ink"
 
 main :: proc() {
-	s, err := ink.story_make(#load("../../tests/ink/testdata/choice_brackets.json"))
+	s, err := ink.story_make(#load("../../tests/ink/testdata/example.json"))
+	defer ink.story_destroy(&s)
 	if err != nil {
 		log.fatalf("story make err: %v", err)
 	}
 
-	// for s.can_continue {
-	// 	fmt.println(ink.story_continue(&s))
-	// }
-
 	for {
 		for s.can_continue {
-			fmt.println(ink.story_continue(&s))
+			fmt.print(ink.story_continue(&s))
+		}
+
+		if len(s.current_choices) == 0 {
+			fmt.println("END")
+			break
 		}
 
 		for c, i in s.current_choices {

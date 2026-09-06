@@ -215,9 +215,11 @@ story_from_json_choice_brackets :: proc(t: ^testing.T) {
 		return
 	}
 
+	testing.expect_value(t, s.can_continue, true)
 	l := ink.story_continue(&s)
 	testing.expect_value(t, l, "")
 
+	testing.expect_value(t, s.can_continue, false)
 	testing.expect_value(t, len(s.current_choices), 1)
 	testing.expect_value(t, s.current_choices[0].text, "Option")
 

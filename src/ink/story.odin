@@ -158,15 +158,10 @@ story_destroy :: proc(s: ^Story) {
 story_continue :: proc(s: ^Story) -> string {
 	_process_container(s, s.root)
 
-	s.can_continue = len(s.idx_path) > 0
-	if s.can_continue {
-		if _, ok := s.idx_path[len(s.idx_path) - 1].(string); ok {
-			s.can_continue = false
-		}
-	}
-
 	l := strings.clone(strings.trim(strings.to_string(s.str_builder), " "))
 	strings.builder_reset(&s.str_builder)
+
+	s.can_continue = l != ""
 
 	return l
 }
