@@ -9,11 +9,11 @@ Adapt original Ink API
 
 ```odin
 // 1) Load story
-story := ink.load(source_json_string);
+story := ink.story_make(source_json_string);
 
 // 2) Game content, line by line
 for story.can_continue {
-    fmt.print(ink.continue(&story));
+    fmt.print(ink.story_continue(&story));
 }
 
 // 3) Display story.current_choices list, allow player to choose one
