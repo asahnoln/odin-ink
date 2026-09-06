@@ -200,7 +200,7 @@ choice :: proc(t: ^testing.T) {
 
 	ink.choose_choice_index(&s, 0)
 
-	// testing.expect_value(t, s.can_continue, true)
+	testing.expect_value(t, s.can_continue, true)
 	//
 	// {
 	// 	l := ink.story_continue(&s)
