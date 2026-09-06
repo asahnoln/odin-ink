@@ -183,24 +183,50 @@ convert_float :: proc(t: ^testing.T) {
 	testing.expect_value(t, got.(f64), 15.25)
 }
 
-// @(test)
-// story_from_json_choice_done :: proc(t: ^testing.T) {
-// 	s, err := ink.story_make_from_json(#load("testdata/choice_done.json"))
-// 	defer ink.story_destroy(&s)
-//
-// 	if !testing.expect_value(t, err, nil) {
-// 		return
-// 	}
-//
-// 	l := ink.story_continue(&s)
-// 	testing.expect_value(t, l, "")
-//
-// 	testing.expect_value(t, len(s.current_choices), 1)
-//
-// 	ink.choose_choice_index(&s, 0)
-//
-// 	got := ink.story_continue(&s)
-// 	defer delete(got)
-// 	want := "choice"
-// 	testing.expectf(t, got == want, "got %q; want %q", got, want)
-// }
+@(test)
+story_from_json_choice_done :: proc(t: ^testing.T) {
+	s, err := ink.story_make_from_json(#load("testdata/choice_done.json"))
+	defer ink.story_destroy(&s)
+
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+
+	l := ink.story_continue(&s)
+	testing.expect_value(t, l, "")
+
+	testing.expect_value(t, len(s.current_choices), 1)
+
+	ink.choose_choice_index(&s, 0)
+
+	got := ink.story_continue(&s)
+	defer delete(got)
+	// TODO: Trim string...
+	// want := "choice"
+	want := "choice \n"
+	testing.expectf(t, got == want, "got %q; want %q", got, want)
+}
+
+@(test)
+story_from_json_choice_brackets :: proc(t: ^testing.T) {
+	s, err := ink.story_make_from_json(#load("testdata/choice_brackets.json"))
+	defer ink.story_destroy(&s)
+
+	if !testing.expect_value(t, err, nil) {
+		return
+	}
+
+	l := ink.story_continue(&s)
+	testing.expect_value(t, l, "")
+
+	testing.expect_value(t, len(s.current_choices), 1)
+	testing.expect_value(t, s.current_choices[0].text, "Option")
+
+	ink.choose_choice_index(&s, 0)
+
+	got := ink.story_continue(&s)
+	defer delete(got)
+
+	want := "Text\n"
+	testing.expectf(t, got == want, "got %q; want %q", got, want)
+}

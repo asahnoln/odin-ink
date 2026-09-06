@@ -228,6 +228,10 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				continue
 			}
 
+			if v == "\n" && strings.builder_len(s.str_builder) == 0 {
+				continue
+			}
+
 			strings.write_string(&s.str_builder, v)
 			if v == "\n" {
 				s.idx_path[depth] = s.idx_path[depth].(int) + 1
