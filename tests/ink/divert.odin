@@ -106,3 +106,32 @@ divert_relative_path :: proc(t: ^testing.T) {
 	delete(ink.story_continue(&s))
 	testing.expect_value(t, s.can_continue, false)
 }
+
+@(test)
+divert_to_named_container_in_its_info :: proc(t: ^testing.T) {
+	s := ink.story_make(
+	ink.Container {
+		ink.Divert{path = "1.named"}, //
+		ink.Container {
+			"Should skip this",
+			"\n",
+			ink.Container {
+				"Get ", 	//
+				ink.Container_Info{name = "named"},
+			},
+			"this!",
+			"\n",
+		},
+	},
+	)
+	defer ink.story_destroy(&s)
+
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Subcontainer!\n")
+	}
+
+	delete(ink.story_continue(&s))
+	testing.expect_value(t, s.can_continue, false)
+}
