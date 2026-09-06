@@ -1,7 +1,6 @@
 package ink
 
 import "core:encoding/json"
-import "core:log"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
@@ -266,9 +265,6 @@ _container_info :: proc(c: Container) -> (Container_Info, bool) {
 }
 
 _convert_path :: proc(path: string, idxs: ^Idx_Path) {
-	if path == ".^.c-0" {
-		log.infof("convert idxs: %w", idxs^)
-	}
 	p_idx := 0
 	if path[0] == REL_PATH_START {
 		p_idx = 1
