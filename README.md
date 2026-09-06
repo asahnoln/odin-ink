@@ -24,6 +24,8 @@ ink.choose_choice_index(&story, 0);
 ## TODO
 
 - [ ] Compare how can_continue works in original - should it be able to predict no content ahead?
+- [ ] current_text - do we need it? How does it work with continue_maximally?
+- [ ] Implement story_continue_maximally
 - [ ] Implement json conversion and story application for:
   - [ ] variable pointer
   - [ ] void
