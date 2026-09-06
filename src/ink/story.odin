@@ -165,7 +165,7 @@ story_continue :: proc(s: ^Story) -> string {
 		}
 	}
 
-	l := strings.clone(strings.to_string(s.str_builder))
+	l := strings.clone(strings.trim(strings.to_string(s.str_builder), " "))
 	strings.builder_reset(&s.str_builder)
 
 	return l
@@ -190,6 +190,7 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 		append(&s.idx_path, 0)
 	}
 
+	// Check string index for a named container (in or by info)
 	from := 0
 	switch v in s.idx_path[depth] {
 	case int:
@@ -215,6 +216,7 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 		}
 	}
 
+	// Travese the contents of the container
 	for e, i in c[from:] {
 		s.idx_path[depth] = i + from
 
@@ -263,6 +265,9 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				s.mode = .Content
 			case .Ev_End:
 				s.mode = .Default
+			case .Done:
+				// TODO: Test for .Done - is this ok to stop like that???
+				return false
 			}
 		}
 	}
