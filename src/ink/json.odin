@@ -4,15 +4,20 @@ import "core:encoding/json"
 import "core:strings"
 
 json_convert :: proc(j: json.Value) -> Element {
-	#partial switch val in j {
+	switch val in j {
 	case json.Array:
 		return _json_convert_array(val)
-	case json.Integer:
-		return f64(val)
 	case json.String:
 		return _json_convert_string(val)
 	case json.Object:
 		return _json_convert_object(val)
+	case json.Boolean:
+		return val
+	case json.Integer:
+		return cast(f64)val
+	case json.Float:
+		return val
+	case json.Null:
 	}
 
 	return nil
@@ -121,6 +126,6 @@ destroy_element :: proc(el: Element) {
 		delete(v.name)
 	case Choice:
 		delete(v.path)
-	case f64, Control_Command:
+	case Control_Command, f64, bool:
 	}
 }

@@ -166,6 +166,22 @@ convert_choice :: proc(t: ^testing.T) {
 	)
 }
 
+@(test)
+convert_bool :: proc(t: ^testing.T) {
+	got := ink.json_convert(true)
+	defer ink.destroy_element(got)
+
+	testing.expect_value(t, got.(bool), true)
+}
+
+@(test)
+convert_float :: proc(t: ^testing.T) {
+	got := ink.json_convert(15.25)
+	defer ink.destroy_element(got)
+
+	testing.expect_value(t, got.(f64), 15.25)
+}
+
 // @(test)
 // story_from_json_choice_done :: proc(t: ^testing.T) {
 // 	s, err := ink.story_make_from_json(#load("testdata/choice_done.json"))

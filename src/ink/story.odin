@@ -1,16 +1,16 @@
 package ink
 
 import "core:encoding/json"
-import "core:log"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
 
 Element :: union {
-	Container,
-	Container_Info,
 	string,
 	f64,
+	bool,
+	Container,
+	Container_Info,
 	Control_Command,
 	Choice,
 	Divert,
