@@ -193,6 +193,7 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				// TODO:: What happens if container not found? Error?
 				if info, ok := _container_info(cnt); ok && info.name == v {
 					from = i
+					// TODO: Check for a second container with the same name?
 					break
 				}
 			}
@@ -205,17 +206,34 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 		#partial switch v in e {
 		case Container:
 			_process_container(s, v, depth + 1) or_return
+
 		case string:
+			if s.mode == .Content {
+				append(&s.stack, v)
+				continue
+			}
+
 			strings.write_string(&s.str_builder, v)
 			if v == "\n" {
 				s.idx_path[depth] = s.idx_path[depth].(int) + 1
 				return false
 			}
+
 		case Divert:
 			_convert_path(v.path, &s.idx_path)
-
 			_process_container(s, s.root)
 			return false
+
+		case Choice:
+			ch := v
+			ch.text = pop(&s.stack)
+			append(&s.current_choices, ch)
+
+		case Control_Command:
+			#partial switch v {
+			case .Str:
+				s.mode = .Content
+			}
 		}
 	}
 
@@ -244,7 +262,10 @@ _convert_path :: proc(path: string, idxs: ^Idx_Path) {
 
 	idx_path_resize := slice.count(p, REL_PATH_PARENT)
 
-	last_idx := pop(idxs)
+	if len(idxs) > 0 {
+		pop(idxs)
+	}
+
 	resize(idxs, 0 if idx_path_resize == 0 else len(idxs) - idx_path_resize + 1)
 
 	for i in p[idx_path_resize:] {
@@ -254,5 +275,4 @@ _convert_path :: proc(path: string, idxs: ^Idx_Path) {
 		append(idxs, iu)
 	}
 
-	append(idxs, last_idx)
 }
