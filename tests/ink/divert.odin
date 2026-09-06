@@ -108,7 +108,7 @@ divert_relative_path :: proc(t: ^testing.T) {
 }
 
 @(test)
-divert_to_named_container_in_its_info :: proc(t: ^testing.T) {
+divert_to_named_container_by_info :: proc(t: ^testing.T) {
 	s := ink.story_make(
 	ink.Container {
 		ink.Divert{path = "1.named"}, //
@@ -116,11 +116,12 @@ divert_to_named_container_in_its_info :: proc(t: ^testing.T) {
 			"Should skip this",
 			"\n",
 			ink.Container {
-				"Get ", 	//
+				"Get ", //
 				ink.Container_Info{name = "named"},
 			},
 			"this!",
 			"\n",
+			nil,
 		},
 	},
 	)
@@ -129,7 +130,7 @@ divert_to_named_container_in_its_info :: proc(t: ^testing.T) {
 	{
 		l := ink.story_continue(&s)
 		defer delete(l)
-		testing.expect_value(t, l, "Subcontainer!\n")
+		testing.expect_value(t, l, "Get this!\n")
 	}
 
 	delete(ink.story_continue(&s))
