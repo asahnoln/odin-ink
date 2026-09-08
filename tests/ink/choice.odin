@@ -113,3 +113,59 @@ choose_choice_index_out_of_bounds_err :: proc(t: ^testing.T) {
 		testing.expect_value(t, err, ink.Choose_Out_Of_Bounds_Error{chosen = -200, len = 1})
 	}
 }
+
+@(test)
+choice_once :: proc(t: ^testing.T) {
+	subs := make(map[string]ink.Container)
+	subs["once-0"] = ink.Container{ink.Divert{path = "0"}, nil}
+	subs["sticky-1"] = ink.Container{ink.Divert{path = "0"}, nil}
+	defer delete(subs)
+
+	s := ink.story_make(
+		ink.Container {
+			ink.Container {
+				ink.Container {
+					.Ev,
+					.Str,
+					"once choice",
+					.Str_End,
+					.Ev_End,
+					ink.Choice{path = ".^.^.once-0", flags = {.Has_Start_Content, .Once_Only}},
+				},
+				ink.Container {
+					.Ev,
+					.Str,
+					"sticky choice",
+					.Str_End,
+					.Ev_End,
+					ink.Choice{path = ".^.^.sticky-1", flags = {.Has_Start_Content}},
+				},
+				ink.Container_Info{subs = subs},
+			},
+		},
+	)
+	defer ink.story_destroy(&s)
+
+	ink.story_continue(&s)
+
+	testing.expect_value(t, len(s.current_choices), 2)
+	testing.expect_value(t, s.current_choices[0].text, "once choice")
+
+	ink.choose_choice_index(&s, 0)
+	ink.story_continue(&s)
+
+	testing.expect_value(t, len(s.current_choices), 1)
+	testing.expect_value(t, s.current_choices[0].text, "sticky choice")
+
+	ink.choose_choice_index(&s, 0)
+	ink.story_continue(&s)
+
+	testing.expect_value(t, len(s.current_choices), 1)
+	testing.expect_value(t, s.current_choices[0].text, "sticky choice")
+
+	testing.expect_value(t, s.containers_read_count[""], 1)
+	testing.expect_value(t, s.containers_read_count["0"], 3)
+	testing.expect_value(t, s.containers_read_count["0.0"], 3)
+	testing.expect_value(t, s.containers_read_count["0.1"], 3)
+	testing.expect_value(t, s.containers_read_count["0.once-0"], 1)
+}

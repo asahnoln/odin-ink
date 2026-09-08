@@ -87,15 +87,16 @@ Idx :: union #no_nil {
 Idx_Path :: [dynamic]Idx
 
 Story :: struct {
-	can_continue:    bool,
-	current_choices: [dynamic]Choice,
-	root:            Container,
-	stack:           [dynamic]string,
-	mode:            Mode,
-	vars:            map[string]string,
-	idx_path:        Idx_Path,
-	str_builder:     strings.Builder,
-	root_allocated:  bool,
+	can_continue:          bool,
+	current_choices:       [dynamic]Choice,
+	root:                  Container,
+	stack:                 [dynamic]string,
+	mode:                  Mode,
+	vars:                  map[string]string,
+	containers_read_count: map[string]int,
+	idx_path:              Idx_Path,
+	str_builder:           strings.Builder,
+	root_allocated:        bool,
 }
 
 IDX_PATH_SEP :: "."
@@ -115,6 +116,7 @@ story_make_empty :: proc(allocator := context.allocator) -> (s: Story) {
 		stack = make([dynamic]string, allocator),
 		idx_path = make(Idx_Path, allocator),
 		vars = make(map[string]string, allocator),
+		containers_read_count = make(map[string]int, allocator),
 		can_continue = true,
 	}
 }
@@ -155,17 +157,15 @@ story_destroy :: proc(s: ^Story) {
 	delete(s.vars)
 	strings.builder_destroy(&s.str_builder)
 
+	for p, _ in s.containers_read_count {
+		delete(p)
+	}
+	delete(s.containers_read_count)
+
 	if s.root_allocated {
 		destroy_element(s.root)
 	}
 
-}
-
-Container_Not_Found_By_Name_Error :: struct {
-	path, name: string,
-}
-Story_Continue_Error :: union {
-	Container_Not_Found_By_Name_Error,
 }
 
 story_continue :: proc(s: ^Story) -> (l: string) {
@@ -212,6 +212,28 @@ choose_choice_index :: proc(s: ^Story, i: int) -> Choose_Error {
 
 _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bool) {
 	if len(s.idx_path) == depth {
+		b := strings.builder_make()
+		for idx, i in s.idx_path {
+			switch v in idx {
+			case int:
+				strings.write_int(&b, v)
+			case string:
+				strings.write_string(&b, v)
+			}
+
+			if i < len(s.idx_path) - 1 {
+				strings.write_rune(&b, '.')
+			}
+		}
+
+		// TODO: Check if exists for allocating
+		p := strings.to_string(b)
+		if _, ok := s.containers_read_count[p]; !ok {
+			s.containers_read_count[strings.clone(p)] = 0
+		}
+		s.containers_read_count[p] += 1
+		strings.builder_destroy(&b)
+
 		append(&s.idx_path, 0)
 	}
 
@@ -285,7 +307,35 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 			ch.text = pop(&s.stack)
 			ch.idx_path = make([]Idx, len(s.idx_path))
 			copy(ch.idx_path, s.idx_path[:])
-			append(&s.current_choices, ch)
+
+			target_idx_path := make(Idx_Path)
+			defer delete(target_idx_path)
+			append(&target_idx_path, ..s.idx_path[:])
+			_convert_path(ch.path, &target_idx_path)
+
+			b := strings.builder_make()
+			defer strings.builder_destroy(&b)
+			for idx, i in target_idx_path {
+				switch v in idx {
+				case int:
+					strings.write_int(&b, v)
+				case string:
+					strings.write_string(&b, v)
+				}
+
+				if i < len(target_idx_path) - 1 {
+					strings.write_rune(&b, '.')
+				}
+			}
+
+			p := strings.to_string(b)
+
+			if .Once_Only not_in ch.flags || s.containers_read_count[p] == 0 {
+				append(&s.current_choices, ch)
+			} else {
+				delete(ch.idx_path)
+			}
+
 
 		case Control_Command:
 			// TODO: Remove partial, check unhandled cases
