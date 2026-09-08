@@ -1,41 +1,54 @@
 package ink
 
+import "base:runtime"
 import "core:encoding/json"
 import "core:strings"
 
-json_convert :: proc(j: json.Value) -> Element {
+json_convert :: proc(
+	j: json.Value,
+	allocator := context.allocator,
+) -> (
+	e: Element,
+	err: runtime.Allocator_Error,
+) #optional_allocator_error {
 	switch val in j {
 	case json.Array:
-		return _json_convert_array(val)
+		return _json_convert_array(val, allocator)
 	case json.String:
 		return _json_convert_string(val)
 	case json.Object:
 		return _json_convert_object(val)
 	case json.Boolean:
-		return val
+		e = val
 	case json.Integer:
-		return cast(f64)val
+		e = cast(f64)val
 	case json.Float:
-		return val
+		e = val
 	case json.Null:
 	}
 
-	return nil
+	return
 }
 
-_json_convert_array :: proc(val: json.Array) -> Container {
-	c := make(Container, len(val))
+_json_convert_array :: proc(
+	val: json.Array,
+	allocator := context.allocator,
+) -> (
+	c: Container,
+	err: runtime.Allocator_Error,
+) {
+	c = make(Container, len(val), allocator) or_return
 	for v, i in val {
 		if i < len(val) - 1 {
-			c[i] = json_convert(v)
+			c[i] = json_convert(v, allocator) or_return
 			continue
 		}
 
 		if o, ok := v.(json.Object); ok {
 			info := Container_Info {
-				name  = strings.clone(o["#n"].(string) or_else ""),
+				name  = strings.clone(o["#n"].(string) or_else "", allocator) or_return,
 				flags = transmute(Container_Flag_Set)cast(u8)(o["#f"].(json.Integer) or_else 0),
-				subs  = make(map[string]Container),
+				subs  = make(map[string]Container, allocator),
 			}
 
 			for n, sub in o {
@@ -44,17 +57,18 @@ _json_convert_array :: proc(val: json.Array) -> Container {
 					continue
 				}
 
-				info.subs[strings.clone(n)] = json_convert(sub).(Container)
+				cnt := json_convert(sub, allocator) or_return
+				info.subs[strings.clone(n, allocator) or_return] = cnt.(Container)
 			}
 
 			c[i] = info
 		}
 	}
 
-	return c
+	return c, err
 }
 
-_json_convert_string :: proc(val: json.String) -> Element {
+_json_convert_string :: proc(val: json.String) -> (e: Element, err: runtime.Allocator_Error) {
 	if val[0] == '^' {
 		return strings.clone(val[1:])
 	}
@@ -63,44 +77,45 @@ _json_convert_string :: proc(val: json.String) -> Element {
 	case "\n":
 		return strings.clone(val)
 	case "done":
-		return .Done
+		e = .Done
 	case "str":
-		return .Str
+		e = .Str
 	case "/str":
-		return .Str_End
+		e = .Str_End
 	case "ev":
-		return .Ev
+		e = .Ev
 	case "/ev":
-		return .Ev_End
+		e = .Ev_End
 	}
 
-	return nil
+	return
 }
 
-_json_convert_object :: proc(val: json.Object) -> Element {
+_json_convert_object :: proc(val: json.Object) -> (e: Element, err: runtime.Allocator_Error) {
 	if p, ok := val["->"]; ok {
-		return Divert{path = strings.clone(p.(string)), var = val["var"].(bool) or_else false}
+		return Divert{path = strings.clone(p.(string)), var = val["var"].(bool) or_else false}, nil
 	}
 
 	if p, ok := val["^->"]; ok {
-		return Divert_Assign{path = strings.clone(p.(string))}
+		return Divert_Assign{path = strings.clone(p.(string))}, nil
 	}
 
 	if v, ok := val["temp="]; ok {
-		return Temp_Var{name = strings.clone(v.(string))}
+		return Temp_Var{name = strings.clone(v.(string))}, nil
 	}
 
 	if p, ok := val["*"]; ok {
 		return Choice {
-			path = strings.clone(p.(string)),
-			flags = transmute(Choice_Flag_Set)cast(u8)val["flg"].(json.Float),
-		}
+				path = strings.clone(p.(string)),
+				flags = transmute(Choice_Flag_Set)cast(u8)val["flg"].(json.Float),
+			},
+			nil
 	}
 
-	return nil
+	return
 }
 
-destroy_element :: proc(el: Element) {
+destroy_element :: proc(el: Element, allocator := context.allocator) {
 	switch v in el {
 	case Container:
 		for e in v {

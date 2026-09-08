@@ -110,16 +110,14 @@ story_make :: proc {
 }
 
 story_make_empty :: proc(allocator := context.allocator) -> (s: Story) {
-	s = Story {
-		str_builder     = strings.builder_make(allocator),
+	return Story {
+		str_builder = strings.builder_make(allocator),
 		current_choices = make([dynamic]Choice, allocator),
-		stack           = make([dynamic]string, allocator),
-		idx_path        = make(Idx_Path, allocator),
-		vars            = make(map[string]string, allocator),
-		can_continue    = true,
+		stack = make([dynamic]string, allocator),
+		idx_path = make(Idx_Path, allocator),
+		vars = make(map[string]string, allocator),
+		can_continue = true,
 	}
-
-	return
 }
 
 story_make_from_struct :: proc(c: Container, allocator := context.allocator) -> (s: Story) {

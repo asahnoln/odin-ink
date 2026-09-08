@@ -242,24 +242,38 @@ story_json_error :: proc(t: ^testing.T) {
 	testing.expect_value(t, err, json.Error.Unexpected_Token)
 }
 
+alloc_err_stub := runtime.Allocator {
+	procedure = proc(
+		allocator_data: rawptr,
+		mode: runtime.Allocator_Mode,
+		size, alignment: int,
+		old_memory: rawptr,
+		old_size: int,
+		location: runtime.Source_Code_Location = #caller_location,
+	) -> (
+		[]byte,
+		runtime.Allocator_Error,
+	) {
+		return nil, .Out_Of_Memory
+	},
+}
+
 @(test)
 story_json_alloc_error :: proc(t: ^testing.T) {
-	alloc_err_stub := runtime.Allocator {
-		procedure = proc(
-			allocator_data: rawptr,
-			mode: runtime.Allocator_Mode,
-			size, alignment: int,
-			old_memory: rawptr,
-			old_size: int,
-			location: runtime.Source_Code_Location = #caller_location,
-		) -> (
-			[]byte,
-			runtime.Allocator_Error,
-		) {
-			return nil, .Out_Of_Memory
-		},
-	}
 	_, err := ink.story_make(#load("testdata/choice_done.json"), alloc_err_stub)
 
 	testing.expect_value(t, err, json.Error.Out_Of_Memory)
 }
+
+@(test)
+convert_container_alloc_err :: proc(t: ^testing.T) {
+	arrs := json.Array{1, 2, 3}
+
+	e, err := ink.json_convert(arrs, alloc_err_stub)
+	defer ink.destroy_element(e, alloc_err_stub)
+	json.destroy_value(arrs)
+
+	testing.expect_value(t, err, runtime.Allocator_Error.Out_Of_Memory)
+}
+
+// TODO: Allocator for string and object conversion
