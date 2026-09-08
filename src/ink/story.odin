@@ -67,9 +67,11 @@ Choice_Flag :: enum {
 Choice_Flag_Set :: bit_set[Choice_Flag]
 
 Choice :: struct {
+	// Target path in dot notation
 	path:     string,
 	flags:    Choice_Flag_Set,
 	text:     string,
+	// Current choice path
 	idx_path: []Idx,
 }
 
@@ -212,27 +214,12 @@ choose_choice_index :: proc(s: ^Story, i: int) -> Choose_Error {
 
 _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bool) {
 	if len(s.idx_path) == depth {
-		b := strings.builder_make()
-		for idx, i in s.idx_path {
-			switch v in idx {
-			case int:
-				strings.write_int(&b, v)
-			case string:
-				strings.write_string(&b, v)
-			}
-
-			if i < len(s.idx_path) - 1 {
-				strings.write_rune(&b, '.')
-			}
-		}
-
-		// TODO: Check if exists for allocating
-		p := strings.to_string(b)
-		if _, ok := s.containers_read_count[p]; !ok {
-			s.containers_read_count[strings.clone(p)] = 0
-		}
+		p := _idx_path_to_string(s.idx_path)
+		_, ok := s.containers_read_count[p]
 		s.containers_read_count[p] += 1
-		strings.builder_destroy(&b)
+		if ok {
+			delete(p)
+		}
 
 		append(&s.idx_path, 0)
 	}
@@ -308,27 +295,15 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 			ch.idx_path = make([]Idx, len(s.idx_path))
 			copy(ch.idx_path, s.idx_path[:])
 
+			// TODO: Move path calculations to JSON conversion!
 			target_idx_path := make(Idx_Path)
 			defer delete(target_idx_path)
+
 			append(&target_idx_path, ..s.idx_path[:])
 			_convert_path(ch.path, &target_idx_path)
 
-			b := strings.builder_make()
-			defer strings.builder_destroy(&b)
-			for idx, i in target_idx_path {
-				switch v in idx {
-				case int:
-					strings.write_int(&b, v)
-				case string:
-					strings.write_string(&b, v)
-				}
-
-				if i < len(target_idx_path) - 1 {
-					strings.write_rune(&b, '.')
-				}
-			}
-
-			p := strings.to_string(b)
+			p := _idx_path_to_string(target_idx_path)
+			defer delete(p)
 
 			if .Once_Only not_in ch.flags || s.containers_read_count[p] == 0 {
 				append(&s.current_choices, ch)
@@ -353,6 +328,25 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 
 	pop(&s.idx_path)
 	return true
+}
+
+_idx_path_to_string :: proc(path: Idx_Path) -> string {
+	b := strings.builder_make()
+	defer strings.builder_destroy(&b)
+	for idx, i in path {
+		switch v in idx {
+		case int:
+			strings.write_int(&b, v)
+		case string:
+			strings.write_string(&b, v)
+		}
+
+		if i < len(path) - 1 {
+			strings.write_rune(&b, '.')
+		}
+	}
+
+	return strings.clone(strings.to_string(b))
 }
 
 _container_info :: proc(c: Container) -> (Container_Info, bool) {
