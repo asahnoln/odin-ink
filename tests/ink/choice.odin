@@ -72,6 +72,12 @@ choose_choice_index_out_of_bounds_err :: proc(t: ^testing.T) {
 
 	ink.story_continue(&s)
 
-	err := ink.choose_choice_index(&s, 100)
-	testing.expect_value(t, err, ink.Choose_Out_Of_Bounds_Error{chosen = 100, len = 1})
+	{
+		err := ink.choose_choice_index(&s, 100)
+		testing.expect_value(t, err, ink.Choose_Out_Of_Bounds_Error{chosen = 100, len = 1})
+	}
+	{
+		err := ink.choose_choice_index(&s, -200)
+		testing.expect_value(t, err, ink.Choose_Out_Of_Bounds_Error{chosen = -200, len = 1})
+	}
 }

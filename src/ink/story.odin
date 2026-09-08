@@ -178,7 +178,7 @@ Choose_Error :: union {
 }
 
 choose_choice_index :: proc(s: ^Story, i: int) -> Choose_Error {
-	if l := len(s.current_choices); i >= l {
+	if l := len(s.current_choices); i < 0 || i >= l {
 		return Choose_Out_Of_Bounds_Error{chosen = i, len = l}
 	}
 
