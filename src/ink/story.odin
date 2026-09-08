@@ -147,6 +147,9 @@ story_make_from_json :: proc(
 }
 
 story_destroy :: proc(s: ^Story) {
+	for c in s.current_choices {
+		delete(c.idx_path)
+	}
 	delete(s.current_choices)
 	delete(s.stack)
 	delete(s.idx_path)
@@ -182,6 +185,7 @@ choose_choice_index :: proc(s: ^Story, i: int) -> Choose_Error {
 		return Choose_Out_Of_Bounds_Error{chosen = i, len = l}
 	}
 
+	// TODO: Check allocation error
 	append(&s.idx_path, ..s.current_choices[i].idx_path)
 	_convert_path(s.current_choices[i].path, &s.idx_path)
 
