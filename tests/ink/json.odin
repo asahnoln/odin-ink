@@ -1,6 +1,7 @@
 #+feature dynamic-literals
 package ink_test
 
+import "base:runtime"
 import "core:encoding/json"
 import "core:strings"
 import "core:testing"
@@ -230,4 +231,35 @@ story_from_json_choice_brackets :: proc(t: ^testing.T) {
 
 	want := "Text\n"
 	testing.expectf(t, got == want, "got %q; want %q", got, want)
+}
+
+
+@(test)
+story_json_error :: proc(t: ^testing.T) {
+	data := "l{o}l"
+	_, err := ink.story_make(transmute([]byte)data)
+
+	testing.expect_value(t, err, json.Error.Unexpected_Token)
+}
+
+@(test)
+story_json_alloc_error :: proc(t: ^testing.T) {
+	alloc_err_stub := runtime.Allocator {
+		procedure = proc(
+			allocator_data: rawptr,
+			mode: runtime.Allocator_Mode,
+			size, alignment: int,
+			old_memory: rawptr,
+			old_size: int,
+			location: runtime.Source_Code_Location = #caller_location,
+		) -> (
+			[]byte,
+			runtime.Allocator_Error,
+		) {
+			return nil, .Out_Of_Memory
+		},
+	}
+	_, err := ink.story_make(#load("testdata/choice_done.json"), alloc_err_stub)
+
+	testing.expect_value(t, err, json.Error.Out_Of_Memory)
 }

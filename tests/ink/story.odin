@@ -1,5 +1,7 @@
 package ink_test
 
+import "base:runtime"
+import "core:mem"
 import "core:testing"
 import "src:ink"
 

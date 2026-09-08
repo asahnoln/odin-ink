@@ -109,30 +109,36 @@ story_make :: proc {
 	story_make_from_json,
 }
 
-story_make_empty :: proc() -> Story {
-	s := Story {
-		str_builder     = strings.builder_make(),
-		current_choices = make([dynamic]Choice),
-		stack           = make([dynamic]string),
-		idx_path        = make(Idx_Path),
-		vars            = make(map[string]string),
+story_make_empty :: proc(allocator := context.allocator) -> (s: Story) {
+	s = Story {
+		str_builder     = strings.builder_make(allocator),
+		current_choices = make([dynamic]Choice, allocator),
+		stack           = make([dynamic]string, allocator),
+		idx_path        = make(Idx_Path, allocator),
+		vars            = make(map[string]string, allocator),
 		can_continue    = true,
 	}
 
-	return s
+	return
 }
 
-story_make_from_struct :: proc(c: Container) -> Story {
-	s := story_make_empty()
+story_make_from_struct :: proc(c: Container, allocator := context.allocator) -> (s: Story) {
+	s = story_make_empty(allocator)
 	s.root = c
-	return s
+	return
 }
 
-story_make_from_json :: proc(data: []byte) -> (s: Story, err: json.Error) {
-	s = story_make_empty()
+story_make_from_json :: proc(
+	data: []byte,
+	allocator := context.allocator,
+) -> (
+	s: Story,
+	err: json.Error,
+) {
+	s = story_make_empty(allocator)
 
-	j := json.parse(data) or_return
-	defer json.destroy_value(j)
+	j := json.parse(data, allocator = allocator) or_return
+	defer json.destroy_value(j, allocator)
 
 	c := json_convert(j.(json.Object)["root"])
 
