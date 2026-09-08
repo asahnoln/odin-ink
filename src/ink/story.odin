@@ -138,7 +138,7 @@ story_make_from_json :: proc(
 	j := json.parse(data, allocator = allocator) or_return
 	defer json.destroy_value(j, allocator)
 
-	c := json_convert(j.(json.Object)["root"])
+	c := json_convert(j.(json.Object)["root"], allocator)
 
 	s.root = c.(Container)
 	s.root_allocated = true
@@ -170,8 +170,18 @@ story_continue :: proc(s: ^Story) -> string {
 	return l
 }
 
-choose_choice_index :: proc(s: ^Story, i: int) {
-	// TODO: Check index bound? Return error?
+Choose_Out_Of_Bounds_Error :: struct {
+	chosen, len: int,
+}
+Choose_Error :: union {
+	Choose_Out_Of_Bounds_Error,
+}
+
+choose_choice_index :: proc(s: ^Story, i: int) -> Choose_Error {
+	if l := len(s.current_choices); i >= l {
+		return Choose_Out_Of_Bounds_Error{chosen = i, len = l}
+	}
+
 	append(&s.idx_path, ..s.current_choices[i].idx_path)
 	_convert_path(s.current_choices[i].path, &s.idx_path)
 
@@ -181,6 +191,8 @@ choose_choice_index :: proc(s: ^Story, i: int) {
 	resize(&s.current_choices, 0)
 
 	s.can_continue = true
+
+	return nil
 }
 
 

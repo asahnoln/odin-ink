@@ -48,3 +48,30 @@ choice :: proc(t: ^testing.T) {
 	ink.story_continue(&s)
 	testing.expect_value(t, s.can_continue, false)
 }
+
+@(test)
+choose_choice_index_out_of_bounds_err :: proc(t: ^testing.T) {
+	subs := make(map[string]ink.Container)
+	subs["c-0"] = ink.Container{"Choice ", "branch", "\n"}
+	defer delete(subs)
+
+	s := ink.story_make(
+		ink.Container {
+			ink.Container {
+				.Ev,
+				.Str,
+				"choice text",
+				.Str_End,
+				.Ev_End,
+				ink.Choice{path = ".^.c-0", flags = {.Has_Start_Content, .Once_Only}},
+				ink.Container_Info{subs = subs},
+			},
+		},
+	)
+	defer ink.story_destroy(&s)
+
+	ink.story_continue(&s)
+
+	err := ink.choose_choice_index(&s, 100)
+	testing.expect_value(t, err, ink.Choose_Out_Of_Bounds_Error{chosen = 100, len = 1})
+}
