@@ -199,3 +199,20 @@ divert_from_var :: proc(t: ^testing.T) {
 	delete(ink.story_continue(&s))
 	testing.expect_value(t, s.can_continue, false)
 }
+
+// TODO: Think on error design from story_continue
+container_not_found_by_name :: proc(t: ^testing.T) {
+	s := ink.story_make(
+	ink.Container {
+		ink.Divert{path = "0.notExisting.5", var = true}, //
+	},
+	)
+	defer ink.story_destroy(&s)
+
+	// _, err := ink.story_continue(&s)
+	// testing.expect_value(
+	// 	t,
+	// 	err,
+	// 	ink.Container_Not_Found_By_Name_Error{path = "0.notExisting", name = "notExisting"},
+	// )
+}

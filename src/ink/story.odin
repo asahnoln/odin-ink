@@ -87,16 +87,15 @@ Idx :: union #no_nil {
 Idx_Path :: [dynamic]Idx
 
 Story :: struct {
-	root:            Container,
-	current_choices: [dynamic]Choice,
 	can_continue:    bool,
-	str_builder:     strings.Builder,
+	current_choices: [dynamic]Choice,
+	root:            Container,
 	stack:           [dynamic]string,
 	mode:            Mode,
-	idx_path:        Idx_Path,
 	vars:            map[string]string,
+	idx_path:        Idx_Path,
+	str_builder:     strings.Builder,
 	root_allocated:  bool,
-	_last_idx:       int,
 }
 
 IDX_PATH_SEP :: "."
@@ -162,15 +161,22 @@ story_destroy :: proc(s: ^Story) {
 
 }
 
-story_continue :: proc(s: ^Story) -> string {
+Container_Not_Found_By_Name_Error :: struct {
+	path, name: string,
+}
+Story_Continue_Error :: union {
+	Container_Not_Found_By_Name_Error,
+}
+
+story_continue :: proc(s: ^Story) -> (l: string) {
 	_process_container(s, s.root)
 
-	l := strings.clone(strings.trim(strings.to_string(s.str_builder), " "))
+	l = strings.clone(strings.trim(strings.to_string(s.str_builder), " "))
 	strings.builder_reset(&s.str_builder)
 
 	s.can_continue = l != ""
 
-	return l
+	return
 }
 
 Choose_Out_Of_Bounds_Error :: struct {
@@ -233,12 +239,15 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 				}
 			}
 		}
+
+	// TODO: Seems like it should fire an error here after 2 strategies didn't finish finding the needed container
 	}
 
 	// Travese the contents of the container
 	for e, i in c[from:] {
 		s.idx_path[depth] = i + from
 
+		// TODO: Remove partial, check unhandled cases
 		#partial switch v in e {
 		case Container:
 			_process_container(s, v, depth + 1) or_return
@@ -279,6 +288,7 @@ _process_container :: proc(s: ^Story, c: Container, depth: int = 0) -> (cont: bo
 			append(&s.current_choices, ch)
 
 		case Control_Command:
+			// TODO: Remove partial, check unhandled cases
 			#partial switch v {
 			case .Str:
 				s.mode = .Content

@@ -9,7 +9,7 @@ import "src:ink"
 main :: proc() {
 	context.logger = log.create_console_logger()
 
-	s, err := ink.story_make(#load("../../tests/ink/testdata/simple_longer.json"))
+	s, err := ink.story_make(#load("../../tests/ink/testdata/example2.json"))
 	defer ink.story_destroy(&s)
 	if err != nil {
 		log.fatalf("story make err: %v", err)
