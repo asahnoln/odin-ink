@@ -50,6 +50,38 @@ choice :: proc(t: ^testing.T) {
 }
 
 @(test)
+choice_inside_container :: proc(t: ^testing.T) {
+	subs2 := make(map[string]ink.Container)
+	subs2["dc-0"] = ink.Container{"Deeper choice", "\n"}
+	defer delete(subs2)
+
+	subs := make(map[string]ink.Container)
+	subs["dg-0"] = ink.Container {
+		.Ev,
+		.Str,
+		"deeper choice text",
+		.Str_End,
+		.Ev_End,
+		ink.Choice{path = ".^.dc-0", flags = {.Has_Start_Content, .Once_Only}},
+		ink.Container_Info{subs = subs2},
+	}
+	defer delete(subs)
+
+	s := ink.story_make(ink.Container{ink.Divert{path = "dg-0"}, ink.Container_Info{subs = subs}})
+	defer ink.story_destroy(&s)
+
+	ink.story_continue(&s)
+
+	ink.choose_choice_index(&s, 0)
+
+	{
+		l := ink.story_continue(&s)
+		defer delete(l)
+		testing.expect_value(t, l, "Deeper choice\n")
+	}
+}
+
+@(test)
 choose_choice_index_out_of_bounds_err :: proc(t: ^testing.T) {
 	subs := make(map[string]ink.Container)
 	subs["c-0"] = ink.Container{"Choice ", "branch", "\n"}

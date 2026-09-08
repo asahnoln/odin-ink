@@ -7,7 +7,9 @@ import "core:strconv"
 import "src:ink"
 
 main :: proc() {
-	s, err := ink.story_make(#load("../../tests/ink/testdata/example.json"))
+	context.logger = log.create_console_logger()
+
+	s, err := ink.story_make(#load("../../tests/ink/testdata/simple_longer.json"))
 	defer ink.story_destroy(&s)
 	if err != nil {
 		log.fatalf("story make err: %v", err)
@@ -28,13 +30,16 @@ main :: proc() {
 		}
 
 		buf: [2048]u8
-		n, err2 := os.read(os.stdin, buf[:])
-		if err2 != nil {
-			log.fatalf("read err: %v", err2)
+		n, err := os.read(os.stdin, buf[:])
+		if err != nil {
+			log.fatalf("read err: %v", err)
 		}
 
 		i, _ := strconv.parse_int(cast(string)buf[:n], 10)
 
-		ink.choose_choice_index(&s, i)
+		err2 := ink.choose_choice_index(&s, i)
+		if err != nil {
+			log.fatalf("choose choice err: %v", err2)
+		}
 	}
 }

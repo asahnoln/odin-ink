@@ -185,9 +185,13 @@ choose_choice_index :: proc(s: ^Story, i: int) -> Choose_Error {
 		return Choose_Out_Of_Bounds_Error{chosen = i, len = l}
 	}
 
+	ch := s.current_choices[i]
+
 	// TODO: Check allocation error
-	append(&s.idx_path, ..s.current_choices[i].idx_path)
-	_convert_path(s.current_choices[i].path, &s.idx_path)
+	resize(&s.idx_path, 0)
+	append(&s.idx_path, ..ch.idx_path)
+	_convert_path(ch.path, &s.idx_path)
+
 
 	for c in s.current_choices {
 		delete(c.idx_path)
