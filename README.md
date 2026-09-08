@@ -27,6 +27,9 @@ ink.choose_choice_index(&story, 0);
 - [ ] current_text - do we need it? How does it work with continue_maximally?
 - [ ] Implement story_continue_maximally
 - [ ] Implement json conversion and story application for:
+  - [ ] Container
+    - [x] Traverse through
+    - [ ] Flags
   - [ ] variable pointer
   - [ ] void
   - [ ] Control commands
@@ -79,6 +82,8 @@ ink.choose_choice_index(&story, 0);
     - [ ] `{"VAR?": "danger"}`
   - [ ] Read count
     - [ ] `{"CNT?": "the_hall.light_switch"}`
-  - [x] Choice point
+  - [ ] Choice point
+    - [x] Collection and output
+    - [ ] Flags
   - [x] Paths
 - [ ] Refactor TODOs in code
