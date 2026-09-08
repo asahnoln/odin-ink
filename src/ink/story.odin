@@ -136,14 +136,12 @@ story_make_from_json :: proc(
 	s: Story,
 	err: json.Error,
 ) {
-	s = story_make_empty(allocator)
-
 	j := json.parse(data, allocator = allocator) or_return
 	defer json.destroy_value(j, allocator)
 
 	c := json_convert(j.(json.Object)["root"], allocator)
 
-	s.root = c.(Container)
+	s = story_make_from_struct(c.(Container))
 	s.root_allocated = true
 
 	return
