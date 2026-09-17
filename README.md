@@ -24,6 +24,7 @@ ink.choose_choice_index(&story, 0);
 ## TODO
 
 - [ ] We can do path calculations for choices once in json conversion
+- [ ] What's with newlines sometimes missing???
 - [ ] Compare how can_continue works in original - should it be able to predict no content ahead?
 - [ ] current_text - do we need it? How does it work with continue_maximally?
 - [ ] Implement story_continue_maximally
