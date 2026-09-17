@@ -11,8 +11,8 @@ import "src:ink"
 convert_container :: proc(t: ^testing.T) {
 	arrs := json.Array{json.Array{10, nil}, nil}
 
-	got := ink.json_convert(arrs)
-	defer ink.destroy_element(got)
+	got := ink.json_convert(arrs, context.temp_allocator)
+	defer ink.destroy_element(got, context.temp_allocator)
 	json.destroy_value(arrs)
 
 	testing.expect_value(t, len(got.(ink.Container)), 2)
@@ -22,8 +22,8 @@ convert_container :: proc(t: ^testing.T) {
 @(test)
 convert_string :: proc(t: ^testing.T) {
 	s := strings.clone("^Hey!")
-	got := ink.json_convert(s)
-	defer ink.destroy_element(got)
+	got := ink.json_convert(s, context.temp_allocator)
+	defer ink.destroy_element(got, context.temp_allocator)
 	delete(s)
 
 	testing.expect_value(t, got.(string), "Hey!")
@@ -32,8 +32,8 @@ convert_string :: proc(t: ^testing.T) {
 @(test)
 convert_newline :: proc(t: ^testing.T) {
 	s := strings.clone("\n")
-	got := ink.json_convert(s)
-	defer ink.destroy_element(got)
+	got := ink.json_convert(s, context.temp_allocator)
+	defer ink.destroy_element(got, context.temp_allocator)
 	delete(s)
 
 	testing.expect_value(t, got.(string), "\n")
@@ -69,8 +69,8 @@ convert_divert_from_var :: proc(t: ^testing.T) {
 		"->"  = "$r",
 		"var" = true,
 	}
-	got := ink.json_convert(obj)
-	defer ink.destroy_element(got)
+	got := ink.json_convert(obj, context.temp_allocator)
+	defer ink.destroy_element(got, context.temp_allocator)
 	delete(obj)
 
 	testing.expect_value(t, got.(ink.Divert), ink.Divert{path = "$r", var = true})
@@ -276,4 +276,23 @@ convert_container_alloc_err :: proc(t: ^testing.T) {
 	testing.expect_value(t, err, runtime.Allocator_Error.Out_Of_Memory)
 }
 
-// TODO: Allocator for string and object conversion
+@(test)
+convert_string_alloc_err :: proc(t: ^testing.T) {
+	e, err := ink.json_convert("^some_string", alloc_err_stub)
+	defer ink.destroy_element(e, alloc_err_stub)
+
+	testing.expect_value(t, err, runtime.Allocator_Error.Out_Of_Memory)
+}
+
+@(test)
+convert_object_alloc_err :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"->" = "alloc_err",
+	}
+
+	e, err := ink.json_convert(obj, alloc_err_stub)
+	defer ink.destroy_element(e, alloc_err_stub)
+	delete(obj)
+
+	testing.expect_value(t, err, runtime.Allocator_Error.Out_Of_Memory)
+}

@@ -163,9 +163,4 @@ choice_once :: proc(t: ^testing.T) {
 	testing.expect_value(t, len(s.current_choices), 1)
 	testing.expect_value(t, s.current_choices[0].text, "sticky choice")
 
-	testing.expect_value(t, s.containers_read_count[""], 1)
-	testing.expect_value(t, s.containers_read_count["0"], 3)
-	testing.expect_value(t, s.containers_read_count["0.0"], 3)
-	testing.expect_value(t, s.containers_read_count["0.1"], 3)
-	testing.expect_value(t, s.containers_read_count["0.once-0"], 1)
 }

@@ -15,9 +15,9 @@ json_convert :: proc(
 	case json.Array:
 		return _json_convert_array(val, allocator)
 	case json.String:
-		return _json_convert_string(val)
+		return _json_convert_string(val, allocator)
 	case json.Object:
-		return _json_convert_object(val)
+		return _json_convert_object(val, allocator)
 	case json.Boolean:
 		e = val
 	case json.Integer:
@@ -68,14 +68,20 @@ _json_convert_array :: proc(
 	return c, err
 }
 
-_json_convert_string :: proc(val: json.String) -> (e: Element, err: runtime.Allocator_Error) {
+_json_convert_string :: proc(
+	val: json.String,
+	allocator := context.allocator,
+) -> (
+	e: Element,
+	err: runtime.Allocator_Error,
+) {
 	if val[0] == '^' {
-		return strings.clone(val[1:])
+		return strings.clone(val[1:], allocator)
 	}
 
 	switch val {
 	case "\n":
-		return strings.clone(val)
+		return strings.clone(val, allocator)
 	case "done":
 		e = .Done
 	case "str":
@@ -91,9 +97,19 @@ _json_convert_string :: proc(val: json.String) -> (e: Element, err: runtime.Allo
 	return
 }
 
-_json_convert_object :: proc(val: json.Object) -> (e: Element, err: runtime.Allocator_Error) {
+_json_convert_object :: proc(
+	val: json.Object,
+	allocator := context.allocator,
+) -> (
+	e: Element,
+	err: runtime.Allocator_Error,
+) {
 	if p, ok := val["->"]; ok {
-		return Divert{path = strings.clone(p.(string)), var = val["var"].(bool) or_else false}, nil
+		return Divert {
+				path = strings.clone(p.(string), allocator) or_return,
+				var = val["var"].(bool) or_else false,
+			},
+			nil
 	}
 
 	if p, ok := val["^->"]; ok {
@@ -119,10 +135,10 @@ destroy_element :: proc(el: Element, allocator := context.allocator) {
 	switch v in el {
 	case Container:
 		for e in v {
-			destroy_element(e)
+			destroy_element(e, allocator)
 		}
 
-		delete(v)
+		delete(v, allocator)
 	case Container_Info:
 		for n, c in v.subs {
 			destroy_element(c)
@@ -132,9 +148,9 @@ destroy_element :: proc(el: Element, allocator := context.allocator) {
 		delete(v.subs)
 		delete(v.name)
 	case string:
-		delete(v)
+		delete(v, allocator)
 	case Divert:
-		delete(v.path)
+		delete(v.path, allocator)
 	case Divert_Assign:
 		delete(v.path)
 	case Temp_Var:
