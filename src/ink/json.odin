@@ -44,28 +44,40 @@ _json_convert_array :: proc(
 			continue
 		}
 
-		if o, ok := v.(json.Object); ok {
-			info := Container_Info {
-				name  = strings.clone(o["#n"].(string) or_else "", allocator) or_return,
-				flags = transmute(Container_Flag_Set)cast(u8)(o["#f"].(json.Integer) or_else 0),
-				subs  = make(map[string]Container, allocator),
-			}
-
-			for n, sub in o {
-				switch n {
-				case "#n", "#f":
-					continue
-				}
-
-				cnt := json_convert(sub, allocator) or_return
-				info.subs[strings.clone(n, allocator) or_return] = cnt.(Container)
-			}
-
-			c[i] = info
-		}
+		c[i] = _json_convert_info(v, allocator) or_return
 	}
 
 	return c, err
+}
+
+_json_convert_info :: proc(
+	v: json.Value,
+	allocator := context.allocator,
+) -> (
+	e: Element,
+	err: runtime.Allocator_Error,
+) {
+	if o, ok := v.(json.Object); ok {
+		info := Container_Info {
+			name  = strings.clone(o["#n"].(string) or_else "", allocator) or_return,
+			flags = transmute(Container_Flag_Set)cast(u8)(o["#f"].(json.Integer) or_else 0),
+			subs  = make(map[string]Container, allocator),
+		}
+
+		for n, sub in o {
+			switch n {
+			case "#n", "#f":
+				continue
+			}
+
+			cnt := json_convert(sub, allocator) or_return
+			info.subs[strings.clone(n, allocator) or_return] = cnt.(Container)
+		}
+
+		e = info
+	}
+
+	return
 }
 
 _json_convert_string :: proc(
