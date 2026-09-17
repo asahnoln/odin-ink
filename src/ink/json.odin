@@ -11,13 +11,15 @@ json_convert :: proc(
 	e: Element,
 	err: runtime.Allocator_Error,
 ) #optional_allocator_error {
+	context.allocator = allocator
+
 	switch val in j {
 	case json.Array:
-		return _json_convert_array(val, allocator)
+		return _json_convert_array(val)
 	case json.String:
-		return _json_convert_string(val, allocator)
+		return _json_convert_string(val)
 	case json.Object:
-		return _json_convert_object(val, allocator)
+		return _json_convert_object(val)
 	case json.Boolean:
 		e = val
 	case json.Integer:
@@ -30,38 +32,28 @@ json_convert :: proc(
 	return
 }
 
-_json_convert_array :: proc(
-	val: json.Array,
-	allocator := context.allocator,
-) -> (
-	c: Container,
-	err: runtime.Allocator_Error,
-) {
-	c = make(Container, len(val), allocator) or_return
+@(private)
+_json_convert_array :: proc(val: json.Array) -> (c: Container, err: runtime.Allocator_Error) {
+	c = make(Container, len(val)) or_return
 	for v, i in val {
 		if i < len(val) - 1 {
-			c[i] = json_convert(v, allocator) or_return
+			c[i] = json_convert(v) or_return
 			continue
 		}
 
-		c[i] = _json_convert_info(v, allocator) or_return
+		c[i] = _json_convert_info(v) or_return
 	}
 
 	return c, err
 }
 
-_json_convert_info :: proc(
-	v: json.Value,
-	allocator := context.allocator,
-) -> (
-	e: Element,
-	err: runtime.Allocator_Error,
-) {
+@(private)
+_json_convert_info :: proc(v: json.Value) -> (e: Element, err: runtime.Allocator_Error) {
 	if o, ok := v.(json.Object); ok {
 		info := Container_Info {
-			name  = strings.clone(o["#n"].(string) or_else "", allocator) or_return,
+			name  = strings.clone(o["#n"].(string) or_else "") or_return,
 			flags = transmute(Container_Flag_Set)cast(u8)(o["#f"].(json.Integer) or_else 0),
-			subs  = make(map[string]Container, allocator),
+			subs  = make(map[string]Container),
 		}
 
 		for n, sub in o {
@@ -70,8 +62,8 @@ _json_convert_info :: proc(
 				continue
 			}
 
-			cnt := json_convert(sub, allocator) or_return
-			info.subs[strings.clone(n, allocator) or_return] = cnt.(Container)
+			cnt := json_convert(sub) or_return
+			info.subs[strings.clone(n) or_return] = cnt.(Container)
 		}
 
 		e = info
@@ -80,20 +72,15 @@ _json_convert_info :: proc(
 	return
 }
 
-_json_convert_string :: proc(
-	val: json.String,
-	allocator := context.allocator,
-) -> (
-	e: Element,
-	err: runtime.Allocator_Error,
-) {
+@(private)
+_json_convert_string :: proc(val: json.String) -> (e: Element, err: runtime.Allocator_Error) {
 	if val[0] == '^' {
-		return strings.clone(val[1:], allocator)
+		return strings.clone(val[1:])
 	}
 
 	switch val {
 	case "\n":
-		return strings.clone(val, allocator)
+		return strings.clone(val)
 	case "done":
 		e = .Done
 	case "str":
@@ -109,32 +96,27 @@ _json_convert_string :: proc(
 	return
 }
 
-_json_convert_object :: proc(
-	val: json.Object,
-	allocator := context.allocator,
-) -> (
-	e: Element,
-	err: runtime.Allocator_Error,
-) {
+@(private)
+_json_convert_object :: proc(val: json.Object) -> (e: Element, err: runtime.Allocator_Error) {
 	if p, ok := val["->"]; ok {
 		return Divert {
-				path = strings.clone(p.(string), allocator) or_return,
+				path = strings.clone(p.(string)) or_return,
 				var = val["var"].(bool) or_else false,
 			},
 			nil
 	}
 
 	if p, ok := val["^->"]; ok {
-		return Divert_Assign{path = strings.clone(p.(string), allocator) or_return}, nil
+		return Divert_Assign{path = strings.clone(p.(string)) or_return}, nil
 	}
 
 	if v, ok := val["temp="]; ok {
-		return Temp_Var{name = strings.clone(v.(string), allocator) or_return}, nil
+		return Temp_Var{name = strings.clone(v.(string)) or_return}, nil
 	}
 
 	if p, ok := val["*"]; ok {
 		return Choice {
-				path = strings.clone(p.(string), allocator) or_return,
+				path = strings.clone(p.(string)) or_return,
 				flags = transmute(Choice_Flag_Set)cast(u8)val["flg"].(json.Float),
 			},
 			nil
@@ -144,31 +126,33 @@ _json_convert_object :: proc(
 }
 
 destroy_element :: proc(el: Element, allocator := context.allocator) {
+	context.allocator = allocator
+
 	switch v in el {
 	case Container:
 		for e in v {
-			destroy_element(e, allocator)
+			destroy_element(e)
 		}
 
-		delete(v, allocator)
+		delete(v)
 	case Container_Info:
 		for n, c in v.subs {
-			destroy_element(c, allocator)
-			delete(n, allocator)
+			destroy_element(c)
+			delete(n)
 		}
 
 		delete(v.subs)
-		delete(v.name, allocator)
+		delete(v.name)
 	case string:
-		delete(v, allocator)
+		delete(v)
 	case Divert:
-		delete(v.path, allocator)
+		delete(v.path)
 	case Divert_Assign:
-		delete(v.path, allocator)
+		delete(v.path)
 	case Temp_Var:
-		delete(v.name, allocator)
+		delete(v.name)
 	case Choice:
-		delete(v.path, allocator)
+		delete(v.path)
 	case Control_Command, f64, bool:
 	}
 }
