@@ -113,16 +113,16 @@ _json_convert_object :: proc(
 	}
 
 	if p, ok := val["^->"]; ok {
-		return Divert_Assign{path = strings.clone(p.(string))}, nil
+		return Divert_Assign{path = strings.clone(p.(string), allocator) or_return}, nil
 	}
 
 	if v, ok := val["temp="]; ok {
-		return Temp_Var{name = strings.clone(v.(string))}, nil
+		return Temp_Var{name = strings.clone(v.(string), allocator) or_return}, nil
 	}
 
 	if p, ok := val["*"]; ok {
 		return Choice {
-				path = strings.clone(p.(string)),
+				path = strings.clone(p.(string), allocator) or_return,
 				flags = transmute(Choice_Flag_Set)cast(u8)val["flg"].(json.Float),
 			},
 			nil
@@ -141,22 +141,22 @@ destroy_element :: proc(el: Element, allocator := context.allocator) {
 		delete(v, allocator)
 	case Container_Info:
 		for n, c in v.subs {
-			destroy_element(c)
-			delete(n)
+			destroy_element(c, allocator)
+			delete(n, allocator)
 		}
 
 		delete(v.subs)
-		delete(v.name)
+		delete(v.name, allocator)
 	case string:
 		delete(v, allocator)
 	case Divert:
 		delete(v.path, allocator)
 	case Divert_Assign:
-		delete(v.path)
+		delete(v.path, allocator)
 	case Temp_Var:
-		delete(v.name)
+		delete(v.name, allocator)
 	case Choice:
-		delete(v.path)
+		delete(v.path, allocator)
 	case Control_Command, f64, bool:
 	}
 }

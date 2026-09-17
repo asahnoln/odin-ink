@@ -93,8 +93,8 @@ convert_divert_assign :: proc(t: ^testing.T) {
 	obj := json.Object {
 		"^->" = "0.1.x",
 	}
-	got := ink.json_convert(obj)
-	defer ink.destroy_element(got)
+	got := ink.json_convert(obj, context.temp_allocator)
+	defer ink.destroy_element(got, context.temp_allocator)
 	delete(obj)
 
 	testing.expect_value(t, got.(ink.Divert_Assign), ink.Divert_Assign{path = "0.1.x"})
@@ -105,8 +105,8 @@ convert_temp_var :: proc(t: ^testing.T) {
 	obj := json.Object {
 		"temp=" = "$r",
 	}
-	got := ink.json_convert(obj)
-	defer ink.destroy_element(got)
+	got := ink.json_convert(obj, context.temp_allocator)
+	defer ink.destroy_element(got, context.temp_allocator)
 	delete(obj)
 
 	testing.expect_value(t, got.(ink.Temp_Var), ink.Temp_Var{name = "$r"})
@@ -120,8 +120,8 @@ convert_info :: proc(t: ^testing.T) {
 	}
 	arr := json.Array{20, obj}
 
-	c := ink.json_convert(arr)
-	defer ink.destroy_element(c)
+	c := ink.json_convert(arr, context.temp_allocator)
+	defer ink.destroy_element(c, context.temp_allocator)
 	delete(obj)
 	delete(arr)
 
@@ -138,8 +138,8 @@ convert_info_with_subs :: proc(t: ^testing.T) {
 	}
 	arr := json.Array{obj}
 
-	c := ink.json_convert(arr)
-	defer ink.destroy_element(c)
+	c := ink.json_convert(arr, context.temp_allocator)
+	defer ink.destroy_element(c, context.temp_allocator)
 	delete(obj["g-0"].(json.Array))
 	delete(obj["c-0"].(json.Array))
 	delete(obj)
@@ -156,8 +156,8 @@ convert_choice :: proc(t: ^testing.T) {
 		"*"   = "0.c-0",
 		"flg" = 18.0,
 	}
-	got := ink.json_convert(obj)
-	defer ink.destroy_element(got)
+	got := ink.json_convert(obj, context.temp_allocator)
+	defer ink.destroy_element(got, context.temp_allocator)
 	delete(obj)
 
 	testing.expect_value(t, got.(ink.Choice).path, "0.c-0")
@@ -285,11 +285,48 @@ convert_string_alloc_err :: proc(t: ^testing.T) {
 }
 
 @(test)
-convert_object_alloc_err :: proc(t: ^testing.T) {
+convert_divert_alloc_err :: proc(t: ^testing.T) {
 	obj := json.Object {
 		"->" = "alloc_err",
 	}
 
+	e, err := ink.json_convert(obj, alloc_err_stub)
+	defer ink.destroy_element(e, alloc_err_stub)
+	delete(obj)
+
+	testing.expect_value(t, err, runtime.Allocator_Error.Out_Of_Memory)
+}
+
+@(test)
+convert_divert_assign_alloc_err :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"^->" = "alloc_err",
+	}
+	e, err := ink.json_convert(obj, alloc_err_stub)
+	defer ink.destroy_element(e, alloc_err_stub)
+	delete(obj)
+
+	testing.expect_value(t, err, runtime.Allocator_Error.Out_Of_Memory)
+}
+
+@(test)
+convert_temp_var_alloc_err :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"temp=" = "$alloc_err",
+	}
+	e, err := ink.json_convert(obj, alloc_err_stub)
+	defer ink.destroy_element(e, alloc_err_stub)
+	delete(obj)
+
+	testing.expect_value(t, err, runtime.Allocator_Error.Out_Of_Memory)
+}
+
+@(test)
+convert_choice_alloc_err :: proc(t: ^testing.T) {
+	obj := json.Object {
+		"*"   = "choice_alloc_err",
+		"flg" = 18.0,
+	}
 	e, err := ink.json_convert(obj, alloc_err_stub)
 	defer ink.destroy_element(e, alloc_err_stub)
 	delete(obj)
